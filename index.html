@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدیریت فایل گیت‌هاب | File Manager</title>
-    <!-- Font Awesome 6 (رایگان) -->
+    <title>مدیریت فایل گیت‌هاب | GitFM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- JSZip برای ساخت/استخراج zip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
+        /* همان استایل قبلی، فقط اندکی تغییر برای سازگاری با منوی جدید */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -18,7 +17,6 @@
             display: flex;
             flex-direction: column;
         }
-        /* نوار بالای اتصال */
         .topbar {
             background: #161b22;
             padding: 10px 20px;
@@ -52,7 +50,8 @@
             min-width: 120px;
             flex: 1 1 auto;
         }
-        .topbar input:focus { border-color: #58a6ff; outline: none; }
+        .topbar select { min-width: 180px; cursor: pointer; }
+        .topbar input:focus, .topbar select:focus { border-color: #58a6ff; outline: none; }
         .topbar .btn {
             background: #238636;
             border: none;
@@ -73,14 +72,8 @@
         }
         .topbar .btn-outline:hover { background: #1f2937; }
         .topbar .status { font-size: 12px; color: #8b949e; margin-right: 5px; }
-
-        /* بدنه اصلی */
-        .main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        /* نوار ابزار عمودی (عملیات) */
+        /* ... سایر استایل‌ها مشابه قبل ... */
+        .main { display: flex; flex: 1; overflow: hidden; }
         .toolbar {
             background: #161b22;
             width: 60px;
@@ -107,21 +100,8 @@
             justify-content: center;
         }
         .toolbar .tool-btn:hover { background: #1f2937; color: #f0f6fc; }
-        .toolbar .tool-btn.active { color: #58a6ff; background: #1f2937; }
-        .toolbar .separator {
-            width: 70%;
-            height: 1px;
-            background: #30363d;
-            margin: 6px 0;
-        }
-        /* بخش اصلی فایل‌ها */
-        .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: #0d1117;
-        }
+        .toolbar .separator { width: 70%; height: 1px; background: #30363d; margin: 6px 0; }
+        .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0d1117; }
         .breadcrumb {
             background: #161b22;
             padding: 8px 20px;
@@ -133,26 +113,12 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        .breadcrumb a {
-            color: #58a6ff;
-            text-decoration: none;
-            cursor: pointer;
-        }
+        .breadcrumb a { color: #58a6ff; text-decoration: none; cursor: pointer; }
         .breadcrumb a:hover { text-decoration: underline; }
         .breadcrumb .sep { color: #8b949e; margin: 0 4px; }
         .breadcrumb .current { color: #f0f6fc; font-weight: 500; }
-
-        /* نمای لیست فایل‌ها */
-        .file-list-wrap {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px 20px;
-        }
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-        }
+        .file-list-wrap { flex: 1; overflow-y: auto; padding: 12px 20px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
         .file-item {
             background: #161b22;
             border: 1px solid #30363d;
@@ -168,23 +134,10 @@
         }
         .file-item:hover { background: #1f2937; border-color: #58a6ff; }
         .file-item.selected { background: #1f2937; border-color: #58a6ff; box-shadow: 0 0 0 2px #58a6ff66; }
-        .file-item .icon {
-            font-size: 42px;
-            margin-bottom: 6px;
-            color: #8b949e;
-        }
+        .file-item .icon { font-size: 42px; margin-bottom: 6px; color: #8b949e; }
         .file-item .icon.folder { color: #d29922; }
-        .file-item .name {
-            font-size: 13px;
-            word-break: break-word;
-            max-width: 100%;
-            line-height: 1.3;
-        }
-        .file-item .meta {
-            font-size: 11px;
-            color: #8b949e;
-            margin-top: 4px;
-        }
+        .file-item .name { font-size: 13px; word-break: break-word; max-width: 100%; line-height: 1.3; }
+        .file-item .meta { font-size: 11px; color: #8b949e; margin-top: 4px; }
         .file-item .checkbox {
             position: absolute;
             top: 8px;
@@ -211,15 +164,7 @@
             cursor: pointer;
         }
         .file-item .actions-overlay button:hover { background: #238636; }
-
-        .empty-msg {
-            color: #8b949e;
-            text-align: center;
-            padding: 60px 0;
-            font-size: 16px;
-        }
-
-        /* مودال عمومی */
+        .empty-msg { color: #8b949e; text-align: center; padding: 60px 0; font-size: 16px; }
         .modal-overlay {
             display: none;
             position: fixed;
@@ -242,17 +187,8 @@
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
         }
-        .modal-box h2 {
-            margin-bottom: 16px;
-            color: #f0f6fc;
-            font-size: 22px;
-        }
-        .modal-box label {
-            display: block;
-            margin: 12px 0 4px;
-            color: #8b949e;
-            font-size: 13px;
-        }
+        .modal-box h2 { margin-bottom: 16px; color: #f0f6fc; font-size: 22px; }
+        .modal-box label { display: block; margin: 12px 0 4px; color: #8b949e; font-size: 13px; }
         .modal-box input, .modal-box textarea, .modal-box select {
             width: 100%;
             background: #0d1117;
@@ -263,26 +199,14 @@
             font-size: 14px;
         }
         .modal-box textarea { min-height: 120px; resize: vertical; }
-        .modal-box .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: flex-end;
-        }
-        .modal-box .btn-group button {
-            padding: 8px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
+        .modal-box .btn-group { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        .modal-box .btn-group button { padding: 8px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
         .modal-box .btn-primary { background: #238636; color: #fff; }
         .modal-box .btn-primary:hover { background: #2ea043; }
         .modal-box .btn-secondary { background: #30363d; color: #c9d1d9; }
         .modal-box .btn-secondary:hover { background: #484f58; }
         .modal-box .btn-danger { background: #da3633; color: #fff; }
         .modal-box .btn-danger:hover { background: #f85149; }
-
         .toast {
             position: fixed;
             bottom: 30px;
@@ -299,11 +223,8 @@
         }
         .toast.error { background: #da3633; }
         .toast.info { background: #1f6feb; }
-
-        /* واکنش‌گرایی */
         @media (max-width: 768px) {
             .topbar .logo { display: none; }
-            .topbar .conn-group input { min-width: 80px; }
             .toolbar { width: 50px; }
             .toolbar .tool-btn { font-size: 18px; width: 38px; height: 38px; }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -311,7 +232,6 @@
         }
         @media (max-width: 480px) {
             .topbar { flex-direction: column; align-items: stretch; }
-            .topbar .conn-group { flex-wrap: wrap; }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
             .file-item .icon { font-size: 32px; }
         }
@@ -323,8 +243,10 @@
 <div class="topbar">
     <span class="logo"><i class="fas fa-code-branch"></i> GitFM</span>
     <div class="conn-group">
-        <input type="password" id="token" placeholder="توکن (ghp_...)" style="min-width:150px;">
-        <input type="text" id="repo" placeholder="owner/repo" style="min-width:130px;">
+        <input type="password" id="token" placeholder="توکن (ghp_...)" style="min-width:180px;">
+        <select id="repoSelect" style="min-width:200px;">
+            <option value="">-- انتخاب ریپو --</option>
+        </select>
         <input type="text" id="branch" placeholder="branch" value="main" style="min-width:80px;">
         <button class="btn" onclick="connect()"><i class="fas fa-plug"></i> اتصال</button>
         <button class="btn btn-outline" onclick="createRepoModal()"><i class="fas fa-plus"></i> ریپو جدید</button>
@@ -332,9 +254,8 @@
     </div>
 </div>
 
-<!-- بدنه -->
+<!-- بدنه همانند قبل -->
 <div class="main">
-    <!-- نوار ابزار عمودی -->
     <div class="toolbar" id="toolbar">
         <button class="tool-btn" title="بازگشت به بالا" onclick="goUp()"><i class="fas fa-arrow-up"></i></button>
         <div class="separator"></div>
@@ -351,8 +272,6 @@
         <div class="separator"></div>
         <button class="tool-btn" title="تازه‌سازی" onclick="loadCurrentDir()"><i class="fas fa-sync"></i></button>
     </div>
-
-    <!-- محتوای فایل‌ها -->
     <div class="content">
         <div class="breadcrumb" id="breadcrumb">
             <i class="fas fa-home" style="color:#58a6ff;"></i>
@@ -373,7 +292,6 @@
     </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -383,20 +301,15 @@
         owner: '',
         repo: '',
         branch: 'main',
-        currentPath: '',  // مسیر نسبی از ریشه ریپو (بدون / ابتدا)
-        files: [],        // لیست فایل‌های مسیر جاری
-        selected: new Set(), // نام‌های فایل انتخاب‌شده
+        currentPath: '',
+        files: [],
+        selected: new Set(),
+        repos: [], // لیست ریپوهای کاربر
     };
 
     // ====================== توابع کمکی ======================
-    function getConfig() {
-        const token = document.getElementById('token').value.trim();
-        const repoFull = document.getElementById('repo').value.trim();
-        const branch = document.getElementById('branch').value.trim() || 'main';
-        if (!token || !repoFull) { showToast('لطفاً توکن و نام ریپو را وارد کنید', 'error'); return null; }
-        const parts = repoFull.split('/');
-        if (parts.length !== 2) { showToast('فرمت owner/repo صحیح نیست', 'error'); return null; }
-        return { token, owner: parts[0], repo: parts[1], branch };
+    function getToken() {
+        return document.getElementById('token').value.trim();
     }
 
     function getHeaders(token) {
@@ -404,9 +317,9 @@
     }
 
     async function githubFetch(url, options = {}) {
-        const cfg = getConfig();
-        if (!cfg) throw new Error('تنظیمات معتبر نیست');
-        const headers = getHeaders(cfg.token);
+        const token = getToken();
+        if (!token) throw new Error('توکن وارد نشده');
+        const headers = getHeaders(token);
         const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
         if (!res.ok) {
             let msg = await res.text().catch(() => '');
@@ -415,11 +328,10 @@
         return res.json();
     }
 
-    // ساخت لینک خام با توکن (فقط استفاده شخصی)
     function getRawUrl(path) {
-        const cfg = getConfig();
-        if (!cfg) return '';
-        return `https://${cfg.token}@raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${path}`;
+        const { owner, repo, branch, token } = state;
+        if (!owner || !repo || !token) return '';
+        return `https://${token}@raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
     }
 
     function showToast(msg, type = 'info') {
@@ -450,7 +362,83 @@
         document.getElementById('modalOverlay').classList.add('show');
     }
 
-    // ====================== مدیریت مسیر و ناوبری ======================
+    // ====================== مدیریت ریپوها ======================
+    async function fetchRepos(token) {
+        try {
+            const data = await githubFetch('https://api.github.com/user/repos?per_page=100&sort=updated');
+            state.repos = data;
+            const select = document.getElementById('repoSelect');
+            select.innerHTML = '';
+            if (!data || data.length === 0) {
+                select.innerHTML = '<option value="">-- هیچ ریپویی یافت نشد --</option>';
+                return;
+            }
+            data.forEach(repo => {
+                const opt = document.createElement('option');
+                opt.value = repo.full_name;
+                opt.textContent = repo.full_name + (repo.private ? ' (خصوصی)' : ' (عمومی)');
+                select.appendChild(opt);
+            });
+            // اگر ریپوی ذخیره‌شده در لیست هست، انتخابش کن
+            const savedRepo = localStorage.getItem('repo');
+            if (savedRepo && data.some(r => r.full_name === savedRepo)) {
+                select.value = savedRepo;
+            }
+            // اولین ریپو رو پیش‌فرض کن اگر هیچ ذخیره‌ای نبود
+            if (!select.value && data.length > 0) {
+                select.value = data[0].full_name;
+            }
+            return select.value;
+        } catch (err) {
+            showToast('خطا در دریافت ریپوها: ' + err.message, 'error');
+            return null;
+        }
+    }
+
+    // ====================== اتصال ======================
+    async function connect() {
+        const token = getToken();
+        if (!token) { showToast('لطفاً توکن را وارد کنید', 'error'); return; }
+        state.token = token;
+        localStorage.setItem('token', token);
+
+        // دریافت لیست ریپوها
+        const selectedRepo = await fetchRepos(token);
+        if (!selectedRepo) {
+            document.getElementById('connStatus').textContent = '⛔ خطا در دریافت ریپوها';
+            return;
+        }
+
+        // تنظیم state و بارگذاری
+        const [owner, repo] = selectedRepo.split('/');
+        state.owner = owner;
+        state.repo = repo;
+        state.branch = document.getElementById('branch').value.trim() || 'main';
+        state.currentPath = '';
+        state.selected = new Set();
+        localStorage.setItem('repo', selectedRepo);
+        localStorage.setItem('branch', state.branch);
+
+        document.getElementById('connStatus').textContent = `✅ ${selectedRepo} : ${state.branch}`;
+        document.getElementById('connStatus').style.color = '#3fb950';
+        loadCurrentDir();
+    }
+
+    // وقتی کاربر ریپو را از منو تغییر میدهد، دوباره بارگذاری کن
+    document.getElementById('repoSelect').addEventListener('change', function() {
+        if (this.value && state.token) {
+            const [owner, repo] = this.value.split('/');
+            state.owner = owner;
+            state.repo = repo;
+            state.currentPath = '';
+            state.selected = new Set();
+            localStorage.setItem('repo', this.value);
+            document.getElementById('connStatus').textContent = `✅ ${this.value} : ${state.branch}`;
+            loadCurrentDir();
+        }
+    });
+
+    // ====================== مدیریت مسیر و بارگذاری فایل‌ها ======================
     function updateBreadcrumb() {
         const parts = state.currentPath.split('/').filter(p => p);
         let html = `<a onclick="navigateTo('')">ریشه</a>`;
@@ -479,15 +467,16 @@
         navigateTo(parts.join('/'));
     }
 
-    // ====================== بارگذاری فایل‌ها ======================
     async function loadCurrentDir() {
         const container = document.getElementById('fileContainer');
         container.innerHTML = '<div class="empty-msg"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری...</div>';
-        const cfg = getConfig();
-        if (!cfg) { container.innerHTML = '<div class="empty-msg">لطفاً ابتدا اتصال برقرار کنید</div>'; return; }
+        if (!state.owner || !state.repo || !state.token) {
+            container.innerHTML = '<div class="empty-msg">لطفاً ابتدا اتصال برقرار کنید</div>';
+            return;
+        }
 
         try {
-            const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${state.currentPath}`;
+            const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${state.currentPath}`;
             const data = await githubFetch(url);
             if (!Array.isArray(data)) {
                 container.innerHTML = '<div class="empty-msg">این مسیر یک فایل است، نمی‌توان باز کرد</div>';
@@ -495,8 +484,6 @@
             }
             state.files = data;
             renderFiles(data);
-            document.getElementById('connStatus').textContent = `✅ ${cfg.owner}/${cfg.repo} : ${cfg.branch}`;
-            document.getElementById('connStatus').style.color = '#3fb950';
         } catch (err) {
             container.innerHTML = `<div class="empty-msg" style="color:#f85149;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
             showToast(err.message, 'error');
@@ -510,7 +497,6 @@
             return;
         }
         let html = '';
-        // مرتب‌سازی: پوشه‌ها اول
         const sorted = files.sort((a,b) => {
             if (a.type === 'dir' && b.type !== 'dir') return -1;
             if (a.type !== 'dir' && b.type === 'dir') return 1;
@@ -539,7 +525,6 @@
             `;
         });
         container.innerHTML = html;
-        // انتخاب چندگانه با کلیک روی آیتم (به جز checkbox)
         container.querySelectorAll('.file-item').forEach(el => {
             el.addEventListener('click', function(e) {
                 if (e.target.tagName === 'INPUT' || e.target.closest('.actions-overlay')) return;
@@ -555,7 +540,6 @@
     function toggleSelect(path, checked) {
         if (checked) state.selected.add(path);
         else state.selected.delete(path);
-        // به‌روزرسانی کلاس
         document.querySelectorAll('.file-item').forEach(el => {
             if (el.dataset.path === path) {
                 el.classList.toggle('selected', checked);
@@ -567,12 +551,10 @@
         return state.files.filter(f => state.selected.has(f.path));
     }
 
-    // ====================== عملیات فایل ======================
-
+    // ====================== عملیات فایل (همان‌های قبلی) ======================
     // آپلود
     async function uploadFiles(files) {
-        const cfg = getConfig();
-        if (!cfg) return;
+        if (!state.owner || !state.repo) { showToast('ابتدا یک ریپو انتخاب کنید', 'error'); return; }
         const path = state.currentPath ? state.currentPath + '/' : '';
         for (let file of files) {
             try {
@@ -584,7 +566,7 @@
                     reader.readAsDataURL(file);
                 });
                 const filePath = path + file.name;
-                const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${filePath}`;
+                const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${filePath}`;
                 let sha = null;
                 try {
                     const check = await githubFetch(url);
@@ -593,12 +575,12 @@
                 const payload = {
                     message: `Upload ${file.name}`,
                     content: content,
-                    branch: cfg.branch,
+                    branch: state.branch,
                 };
                 if (sha) payload.sha = sha;
                 const res = await fetch(url, {
                     method: 'PUT',
-                    headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                    headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error(await res.text());
@@ -635,15 +617,13 @@
         const items = getSelectedItems();
         if (items.length === 0) { showToast('هیچ فایلی انتخاب نشده', 'error'); return; }
         if (!confirm(`آیا ${items.length} مورد حذف شوند؟`)) return;
-        const cfg = getConfig();
-        if (!cfg) return;
         for (let item of items) {
             try {
-                const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${item.path}`;
+                const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}`;
                 await fetch(url, {
                     method: 'DELETE',
-                    headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `Delete ${item.path}`, sha: item.sha, branch: cfg.branch })
+                    headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `Delete ${item.path}`, sha: item.sha, branch: state.branch })
                 });
                 state.selected.delete(item.path);
                 showToast(`🗑️ ${item.name} حذف شد`, 'info');
@@ -663,18 +643,16 @@
             { label: 'ایجاد', class: 'btn-primary', onclick: async () => {
                 const name = document.getElementById('newFolderName').value.trim();
                 if (!name) { showToast('نام را وارد کنید', 'error'); return; }
-                const cfg = getConfig();
-                if (!cfg) return;
                 const path = state.currentPath ? state.currentPath + '/' + name : name;
                 try {
-                    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}/.gitkeep`;
+                    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${path}/.gitkeep`;
                     await fetch(url, {
                         method: 'PUT',
-                        headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             message: `Create folder ${name}`,
                             content: btoa(''),
-                            branch: cfg.branch
+                            branch: state.branch
                         })
                     });
                     showToast(`پوشه ${name} ایجاد شد`, 'info');
@@ -690,8 +668,6 @@
 
     // ویرایش فایل متنی
     async function editFile(path) {
-        const cfg = getConfig();
-        if (!cfg) return;
         try {
             const raw = getRawUrl(path);
             const res = await fetch(raw);
@@ -703,17 +679,17 @@
                 { label: 'ذخیره', class: 'btn-primary', onclick: async () => {
                     const newContent = document.getElementById('editContent').value;
                     const encoded = btoa(unescape(encodeURIComponent(newContent)));
-                    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
+                    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${path}`;
                     try {
                         const data = await githubFetch(url);
                         await fetch(url, {
                             method: 'PUT',
-                            headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 message: `Edit ${path}`,
                                 content: encoded,
                                 sha: data.sha,
-                                branch: cfg.branch
+                                branch: state.branch
                             })
                         });
                         showToast('فایل ذخیره شد', 'info');
@@ -751,14 +727,10 @@
             { label: 'تغییر', class: 'btn-primary', onclick: async () => {
                 const newName = document.getElementById('newName').value.trim();
                 if (!newName || newName === item.name) { closeModal(); return; }
-                const cfg = getConfig();
-                if (!cfg) return;
                 try {
-                    // مسیر جدید
                     const oldPath = item.path;
                     const dir = oldPath.substring(0, oldPath.lastIndexOf('/') + 1);
                     const newPath = dir + newName;
-                    // دریافت محتوای فایل قدیمی
                     const raw = getRawUrl(oldPath);
                     const res = await fetch(raw);
                     if (!res.ok) throw new Error('خطا در خواندن فایل');
@@ -769,23 +741,21 @@
                         reader.onerror = reject;
                         reader.readAsDataURL(blob);
                     });
-                    // آپلود در مسیر جدید
-                    const urlNew = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${newPath}`;
+                    const urlNew = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`;
                     await fetch(urlNew, {
                         method: 'PUT',
-                        headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             message: `Rename ${item.name} to ${newName}`,
                             content: content,
-                            branch: cfg.branch
+                            branch: state.branch
                         })
                     });
-                    // حذف فایل قدیمی
-                    const urlOld = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${oldPath}`;
+                    const urlOld = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${oldPath}`;
                     await fetch(urlOld, {
                         method: 'DELETE',
-                        headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: `Delete old ${item.name}`, sha: item.sha, branch: cfg.branch })
+                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: `Delete old ${item.name}`, sha: item.sha, branch: state.branch })
                     });
                     showToast('تغییر نام انجام شد', 'info');
                     closeModal();
@@ -808,12 +778,9 @@
         `, [
             { label: 'انتقال', class: 'btn-primary', onclick: async () => {
                 const dest = document.getElementById('destPath').value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
-                const cfg = getConfig();
-                if (!cfg) return;
                 for (let item of items) {
                     try {
                         const newPath = dest ? dest + '/' + item.name : item.name;
-                        // دانلود محتوا
                         const raw = getRawUrl(item.path);
                         const res = await fetch(raw);
                         if (!res.ok) throw new Error('خطا در خواندن');
@@ -824,23 +791,21 @@
                             reader.onerror = reject;
                             reader.readAsDataURL(blob);
                         });
-                        // آپلود در مقصد
-                        const urlNew = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${newPath}`;
+                        const urlNew = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`;
                         await fetch(urlNew, {
                             method: 'PUT',
-                            headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 message: `Move ${item.name}`,
                                 content: content,
-                                branch: cfg.branch
+                                branch: state.branch
                             })
                         });
-                        // حذف اصلی
-                        const urlOld = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${item.path}`;
+                        const urlOld = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}`;
                         await fetch(urlOld, {
                             method: 'DELETE',
-                            headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: `Delete after move`, sha: item.sha, branch: cfg.branch })
+                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: `Delete after move`, sha: item.sha, branch: state.branch })
                         });
                         state.selected.delete(item.path);
                     } catch (e) {
@@ -854,7 +819,7 @@
         ]);
     }
 
-    // ====================== زیپ و آنزیپ ======================
+    // زیپ
     async function downloadZip() {
         const items = getSelectedItems();
         if (items.length === 0) { showToast('چیزی انتخاب نشده', 'error'); return; }
@@ -882,6 +847,7 @@
         }
     }
 
+    // آنزیپ
     function unzipModal() {
         openModal('آپلود و استخراج zip', `
             <label>فایل zip را انتخاب کنید</label>
@@ -894,8 +860,6 @@
                 const fileInput = document.getElementById('zipFileInput');
                 const dest = document.getElementById('unzipDest').value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
                 if (!fileInput.files || !fileInput.files[0]) { showToast('فایل zip را انتخاب کنید', 'error'); return; }
-                const cfg = getConfig();
-                if (!cfg) return;
                 try {
                     const zip = await JSZip.loadAsync(fileInput.files[0]);
                     const promises = [];
@@ -904,14 +868,14 @@
                         const fullPath = dest ? dest + '/' + relativePath : relativePath;
                         promises.push((async () => {
                             const content = await zipEntry.async('base64');
-                            const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${fullPath}`;
+                            const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${fullPath}`;
                             await fetch(url, {
                                 method: 'PUT',
-                                headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                                headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     message: `Unzip ${relativePath}`,
                                     content: content,
-                                    branch: cfg.branch
+                                    branch: state.branch
                                 })
                             });
                         })());
@@ -943,21 +907,29 @@
                 if (!name) { showToast('نام ریپو الزامی است', 'error'); return; }
                 const desc = document.getElementById('newRepoDesc').value.trim();
                 const isPrivate = document.getElementById('newRepoPrivate').value === 'true';
-                const cfg = getConfig();
-                if (!cfg) return;
                 try {
                     const url = 'https://api.github.com/user/repos';
                     const res = await fetch(url, {
                         method: 'POST',
-                        headers: { ...getHeaders(cfg.token), 'Content-Type': 'application/json' },
+                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, description: desc, private: isPrivate })
                     });
                     if (!res.ok) throw new Error(await res.text());
                     const data = await res.json();
                     showToast(`ریپو ${data.full_name} ساخته شد`, 'info');
-                    document.getElementById('repo').value = data.full_name;
                     closeModal();
-                    connect();
+                    // به‌روزرسانی لیست ریپوها و انتخاب خودکار جدید
+                    await fetchRepos(state.token);
+                    document.getElementById('repoSelect').value = data.full_name;
+                    // بارگذاری ریپوی جدید
+                    const [owner, repo] = data.full_name.split('/');
+                    state.owner = owner;
+                    state.repo = repo;
+                    state.currentPath = '';
+                    state.selected = new Set();
+                    localStorage.setItem('repo', data.full_name);
+                    document.getElementById('connStatus').textContent = `✅ ${data.full_name} : ${state.branch}`;
+                    loadCurrentDir();
                 } catch (e) {
                     showToast(e.message, 'error');
                 }
@@ -966,41 +938,21 @@
         ]);
     }
 
-    // ====================== اتصال ======================
-    function connect() {
-        const cfg = getConfig();
-        if (!cfg) return;
-        state.token = cfg.token;
-        state.owner = cfg.owner;
-        state.repo = cfg.repo;
-        state.branch = cfg.branch;
-        state.currentPath = '';
-        state.selected = new Set();
-        // ذخیره در localStorage
-        ['token','repo','branch'].forEach(id => {
-            localStorage.setItem(id, document.getElementById(id).value);
-        });
-        document.getElementById('connStatus').textContent = '⏳ در حال اتصال...';
-        loadCurrentDir();
-    }
-
     // ====================== بارگذاری اولیه ======================
     window.onload = function() {
-        ['token','repo','branch'].forEach(id => {
-            const val = localStorage.getItem(id);
-            if (val) document.getElementById(id).value = val;
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            document.getElementById('token').value = savedToken;
+            // بعد از تنظیم توکن، لیست ریپوها رو بگیر
+            connect();
+        }
+        // ذخیره خودکار branch
+        document.getElementById('branch').addEventListener('change', function() {
+            localStorage.setItem('branch', this.value);
+            state.branch = this.value;
+            if (state.owner && state.repo) loadCurrentDir();
         });
-        if (document.getElementById('repo').value) connect();
     };
-
-    // کلید ESC برای بستن مودال
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
-    });
-    // کلیک بیرون مودال
-    document.getElementById('modalOverlay').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
 </script>
 </body>
 </html>
