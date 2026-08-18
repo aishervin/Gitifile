@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        /* همان استایل قبلی، فقط اندکی تغییر برای سازگاری با منوی جدید */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -72,7 +71,6 @@
         }
         .topbar .btn-outline:hover { background: #1f2937; }
         .topbar .status { font-size: 12px; color: #8b949e; margin-right: 5px; }
-        /* ... سایر استایل‌ها مشابه قبل ... */
         .main { display: flex; flex: 1; overflow: hidden; }
         .toolbar {
             background: #161b22;
@@ -254,7 +252,7 @@
     </div>
 </div>
 
-<!-- بدنه همانند قبل -->
+<!-- بدنه -->
 <div class="main">
     <div class="toolbar" id="toolbar">
         <button class="tool-btn" title="بازگشت به بالا" onclick="goUp()"><i class="fas fa-arrow-up"></i></button>
@@ -295,7 +293,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // ====================== وضعیت برنامه ======================
+    // ====================== وضعیت ======================
     let state = {
         token: '',
         owner: '',
@@ -304,7 +302,7 @@
         currentPath: '',
         files: [],
         selected: new Set(),
-        repos: [], // لیست ریپوهای کاربر
+        repos: [],
     };
 
     // ====================== توابع کمکی ======================
@@ -313,25 +311,42 @@
     }
 
     function getHeaders(token) {
-        return { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' };
+        return {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+        };
     }
 
     async function githubFetch(url, options = {}) {
         const token = getToken();
         if (!token) throw new Error('توکن وارد نشده');
         const headers = getHeaders(token);
-        const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
+        const res = await fetch(url, {
+            ...options,
+            headers: { ...headers, ...options.headers }
+        });
         if (!res.ok) {
             let msg = await res.text().catch(() => '');
+            // اگر 404 باشد و محتوای پیام "This repository is empty" باشد، آن را به حالت خالی تفسیر می‌کنیم
+            if (res.status === 404 && msg.includes('empty')) {
+                // خطای خاص ریپوی خالی
+                throw new Error('EMPTY_REPO');
+            }
             throw new Error(`خطا ${res.status}: ${msg || res.statusText}`);
         }
         return res.json();
     }
 
-    function getRawUrl(path) {
-        const { owner, repo, branch, token } = state;
-        if (!owner || !repo || !token) return '';
-        return `https://${token}@raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+    // تابع جدید برای دریافت محتوای خام فایل (با هدر Authorization)
+    async function fetchRawFile(path) {
+        const token = getToken();
+        if (!token) throw new Error('توکن وارد نشده');
+        const url = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${path}`;
+        const res = await fetch(url, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (!res.ok) throw new Error(`خطا در دریافت فایل: ${res.status}`);
+        return res;
     }
 
     function showToast(msg, type = 'info') {
@@ -371,7 +386,7 @@
             select.innerHTML = '';
             if (!data || data.length === 0) {
                 select.innerHTML = '<option value="">-- هیچ ریپویی یافت نشد --</option>';
-                return;
+                return null;
             }
             data.forEach(repo => {
                 const opt = document.createElement('option');
@@ -379,17 +394,17 @@
                 opt.textContent = repo.full_name + (repo.private ? ' (خصوصی)' : ' (عمومی)');
                 select.appendChild(opt);
             });
-            // اگر ریپوی ذخیره‌شده در لیست هست، انتخابش کن
             const savedRepo = localStorage.getItem('repo');
             if (savedRepo && data.some(r => r.full_name === savedRepo)) {
                 select.value = savedRepo;
-            }
-            // اولین ریپو رو پیش‌فرض کن اگر هیچ ذخیره‌ای نبود
-            if (!select.value && data.length > 0) {
+            } else if (!select.value && data.length > 0) {
                 select.value = data[0].full_name;
             }
             return select.value;
         } catch (err) {
+            if (err.message === 'EMPTY_REPO') {
+                // اینجا نباید بیاید چون fetchRepos برای لیست ریپوهاست نه محتوا
+            }
             showToast('خطا در دریافت ریپوها: ' + err.message, 'error');
             return null;
         }
@@ -402,14 +417,12 @@
         state.token = token;
         localStorage.setItem('token', token);
 
-        // دریافت لیست ریپوها
         const selectedRepo = await fetchRepos(token);
         if (!selectedRepo) {
             document.getElementById('connStatus').textContent = '⛔ خطا در دریافت ریپوها';
             return;
         }
 
-        // تنظیم state و بارگذاری
         const [owner, repo] = selectedRepo.split('/');
         state.owner = owner;
         state.repo = repo;
@@ -424,7 +437,7 @@
         loadCurrentDir();
     }
 
-    // وقتی کاربر ریپو را از منو تغییر میدهد، دوباره بارگذاری کن
+    // تغییر ریپو از منو
     document.getElementById('repoSelect').addEventListener('change', function() {
         if (this.value && state.token) {
             const [owner, repo] = this.value.split('/');
@@ -438,7 +451,7 @@
         }
     });
 
-    // ====================== مدیریت مسیر و بارگذاری فایل‌ها ======================
+    // ====================== مسیر و بارگذاری فایل‌ها ======================
     function updateBreadcrumb() {
         const parts = state.currentPath.split('/').filter(p => p);
         let html = `<a onclick="navigateTo('')">ریشه</a>`;
@@ -485,8 +498,15 @@
             state.files = data;
             renderFiles(data);
         } catch (err) {
-            container.innerHTML = `<div class="empty-msg" style="color:#f85149;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
-            showToast(err.message, 'error');
+            if (err.message === 'EMPTY_REPO') {
+                // ریپو خالی است یا پوشه خالی
+                container.innerHTML = '<div class="empty-msg">📭 این ریپازیتوری خالی است. برای شروع یک فایل آپلود کنید.</div>';
+                state.files = [];
+                renderFiles([]);
+            } else {
+                container.innerHTML = `<div class="empty-msg" style="color:#f85149;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
+                showToast(err.message, 'error');
+            }
         }
     }
 
@@ -497,7 +517,7 @@
             return;
         }
         let html = '';
-        const sorted = files.sort((a,b) => {
+        const sorted = files.sort((a, b) => {
             if (a.type === 'dir' && b.type !== 'dir') return -1;
             if (a.type !== 'dir' && b.type === 'dir') return 1;
             return a.name.localeCompare(b.name);
@@ -508,7 +528,7 @@
             const size = isDir ? '' : `${(item.size / 1024).toFixed(1)} KB`;
             const selected = state.selected.has(item.path) ? 'selected' : '';
             const ext = item.name.split('.').pop().toLowerCase();
-            const isText = ['txt','md','json','xml','html','css','js','py','java','c','cpp','h','sh','yml','yaml','toml','ini','cfg'].includes(ext);
+            const isText = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'c', 'cpp', 'h', 'sh', 'yml', 'yaml', 'toml', 'ini', 'cfg'].includes(ext);
             html += `
                 <div class="file-item ${selected}" data-path="${item.path}" data-type="${item.type}">
                     <input type="checkbox" class="checkbox" ${state.selected.has(item.path) ? 'checked' : ''} 
@@ -517,7 +537,7 @@
                     <div class="name">${item.name}</div>
                     <div class="meta">${size}</div>
                     <div class="actions-overlay">
-                        ${isDir ? `<button onclick="navigateTo('${item.path}')"><i class="fas fa-sign-in-alt"></i></button>` : 
+                        ${isDir ? `<button onclick="navigateTo('${item.path}')"><i class="fas fa-sign-in-alt"></i></button>` :
                                   `<button onclick="downloadFile('${item.path}')"><i class="fas fa-download"></i></button>`}
                         ${!isDir && isText ? `<button onclick="editFile('${item.path}')"><i class="fas fa-edit"></i></button>` : ''}
                     </div>
@@ -551,7 +571,8 @@
         return state.files.filter(f => state.selected.has(f.path));
     }
 
-    // ====================== عملیات فایل (همان‌های قبلی) ======================
+    // ====================== عملیات فایل (اصلاح شده با fetchRawFile) ======================
+
     // آپلود
     async function uploadFiles(files) {
         if (!state.owner || !state.repo) { showToast('ابتدا یک ریپو انتخاب کنید', 'error'); return; }
@@ -571,7 +592,7 @@
                 try {
                     const check = await githubFetch(url);
                     if (check && check.sha) sha = check.sha;
-                } catch (e) {}
+                } catch (e) { /* فایل وجود ندارد */ }
                 const payload = {
                     message: `Upload ${file.name}`,
                     content: content,
@@ -592,12 +613,10 @@
         loadCurrentDir();
     }
 
-    // دانلود یک فایل
+    // دانلود یک فایل (با هدر Authorization)
     async function downloadFile(path) {
         try {
-            const raw = getRawUrl(path);
-            const res = await fetch(raw);
-            if (!res.ok) throw new Error('خطا در دانلود');
+            const res = await fetchRawFile(path);
             const blob = await res.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -666,12 +685,10 @@
         ]);
     }
 
-    // ویرایش فایل متنی
+    // ویرایش فایل متنی (با fetchRawFile)
     async function editFile(path) {
         try {
-            const raw = getRawUrl(path);
-            const res = await fetch(raw);
-            if (!res.ok) throw new Error('خطا در خواندن فایل');
+            const res = await fetchRawFile(path);
             const content = await res.text();
             openModal(`ویرایش: ${path.split('/').pop()}`, `
                 <textarea id="editContent">${content}</textarea>
@@ -715,8 +732,8 @@
         editFile(items[0].path);
     }
 
-    // تغییر نام
-    function renameSelected() {
+    // تغییر نام (با fetchRawFile)
+    async function renameSelected() {
         const items = getSelectedItems();
         if (items.length !== 1) { showToast('یک فایل یا پوشه انتخاب کنید', 'error'); return; }
         const item = items[0];
@@ -731,9 +748,8 @@
                     const oldPath = item.path;
                     const dir = oldPath.substring(0, oldPath.lastIndexOf('/') + 1);
                     const newPath = dir + newName;
-                    const raw = getRawUrl(oldPath);
-                    const res = await fetch(raw);
-                    if (!res.ok) throw new Error('خطا در خواندن فایل');
+                    // دریافت محتوا با fetchRawFile
+                    const res = await fetchRawFile(oldPath);
                     const blob = await res.blob();
                     const reader = new FileReader();
                     const content = await new Promise((resolve, reject) => {
@@ -768,8 +784,8 @@
         ]);
     }
 
-    // انتقال
-    function moveSelected() {
+    // انتقال (با fetchRawFile)
+    async function moveSelected() {
         const items = getSelectedItems();
         if (items.length === 0) { showToast('حداقل یک فایل انتخاب کنید', 'error'); return; }
         openModal('انتقال به پوشه', `
@@ -781,9 +797,7 @@
                 for (let item of items) {
                     try {
                         const newPath = dest ? dest + '/' + item.name : item.name;
-                        const raw = getRawUrl(item.path);
-                        const res = await fetch(raw);
-                        if (!res.ok) throw new Error('خطا در خواندن');
+                        const res = await fetchRawFile(item.path);
                         const blob = await res.blob();
                         const reader = new FileReader();
                         const content = await new Promise((resolve, reject) => {
@@ -819,7 +833,7 @@
         ]);
     }
 
-    // زیپ
+    // دانلود zip (با fetchRawFile)
     async function downloadZip() {
         const items = getSelectedItems();
         if (items.length === 0) { showToast('چیزی انتخاب نشده', 'error'); return; }
@@ -827,9 +841,7 @@
             const zip = new JSZip();
             for (let item of items) {
                 if (item.type === 'dir') continue;
-                const raw = getRawUrl(item.path);
-                const res = await fetch(raw);
-                if (!res.ok) throw new Error(`خطا در ${item.name}`);
+                const res = await fetchRawFile(item.path);
                 const blob = await res.blob();
                 zip.file(item.name, blob);
             }
@@ -847,7 +859,7 @@
         }
     }
 
-    // آنزیپ
+    // آنزیپ و آپلود
     function unzipModal() {
         openModal('آپلود و استخراج zip', `
             <label>فایل zip را انتخاب کنید</label>
@@ -918,10 +930,8 @@
                     const data = await res.json();
                     showToast(`ریپو ${data.full_name} ساخته شد`, 'info');
                     closeModal();
-                    // به‌روزرسانی لیست ریپوها و انتخاب خودکار جدید
                     await fetchRepos(state.token);
                     document.getElementById('repoSelect').value = data.full_name;
-                    // بارگذاری ریپوی جدید
                     const [owner, repo] = data.full_name.split('/');
                     state.owner = owner;
                     state.repo = repo;
@@ -943,10 +953,8 @@
         const savedToken = localStorage.getItem('token');
         if (savedToken) {
             document.getElementById('token').value = savedToken;
-            // بعد از تنظیم توکن، لیست ریپوها رو بگیر
             connect();
         }
-        // ذخیره خودکار branch
         document.getElementById('branch').addEventListener('change', function() {
             localStorage.setItem('branch', this.value);
             state.branch = this.value;
