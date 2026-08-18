@@ -4,275 +4,382 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مدیریت فایل گیت‌هاب | GitFM</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
+        :root {
+            --bg-deep: #050507;
+            --glass-bg: rgba(22, 25, 30, 0.65);
+            --glass-border: rgba(210, 153, 34, 0.25);
+            --glass-hover: rgba(30, 35, 42, 0.85);
+            --accent: #d29922;
+            --accent-hover: #e3a826;
+            --accent-glow: rgba(210, 153, 34, 0.4);
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --danger: #f85149;
+            --success: #3fb950;
+            --info: #58a6ff;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background: #0d1117;
-            color: #c9d1d9;
+            font-family: 'Segoe UI', system-ui, Tahoma, sans-serif;
+            background: var(--bg-deep) radial-gradient(circle at 50% 0%, #1a150b 0%, transparent 70%);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* نوار بالایی */
         .topbar {
-            background: #161b22;
-            padding: 10px 20px;
+            padding: 12px 20px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid #30363d;
+            gap: 12px;
             flex-shrink: 0;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(10, 12, 16, 0.8);
+            backdrop-filter: blur(16px);
         }
+        
         .topbar .logo {
-            font-weight: bold;
-            color: #58a6ff;
+            font-weight: 800;
+            color: var(--accent);
             font-size: 18px;
-            margin-left: 15px;
+            margin-left: 20px;
+            text-shadow: 0 0 10px var(--accent-glow);
+            letter-spacing: 1px;
         }
+        
         .topbar .conn-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             flex: 1;
             align-items: center;
         }
-        .topbar input, .topbar select {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 6px 12px;
-            color: #fff;
+
+        input, select, textarea {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-main);
             font-size: 13px;
-            min-width: 120px;
-            flex: 1 1 auto;
+            transition: all 0.3s ease;
         }
-        .topbar select { min-width: 180px; cursor: pointer; }
-        .topbar input:focus, .topbar select:focus { border-color: #58a6ff; outline: none; }
-        .topbar .btn {
-            background: #238636;
+        
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--accent); 
+            outline: none;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+        
+        .btn {
+            background: var(--accent);
             border: none;
-            color: #fff;
-            padding: 6px 16px;
-            border-radius: 6px;
+            color: #000;
+            padding: 8px 18px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             font-size: 13px;
-            transition: 0.2s;
-            white-space: nowrap;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
-        .topbar .btn:hover { background: #2ea043; }
-        .topbar .btn-outline {
+        
+        .btn:hover { 
+            background: var(--accent-hover); 
+            box-shadow: 0 0 12px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline {
             background: transparent;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
         }
-        .topbar .btn-outline:hover { background: #1f2937; }
-        .topbar .status { font-size: 12px; color: #8b949e; margin-right: 5px; }
+        
+        .btn-outline:hover { 
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: inset 0 0 10px var(--accent-glow);
+            background: transparent;
+        }
+
+        .status { font-size: 12px; color: var(--text-muted); margin-right: auto; display: flex; align-items: center; gap: 6px; }
+        
+        /* بدنه و چیدمان */
         .main { display: flex; flex: 1; overflow: hidden; }
+        
         .toolbar {
-            background: #161b22;
-            width: 60px;
+            width: 64px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 12px 0;
-            border-left: 1px solid #30363d;
+            padding: 16px 0;
+            border-left: 1px solid var(--glass-border);
             flex-shrink: 0;
-            gap: 6px;
+            gap: 10px;
+            z-index: 10;
         }
+        
         .toolbar .tool-btn {
             background: transparent;
-            border: none;
-            color: #8b949e;
-            font-size: 22px;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            font-size: 20px;
             width: 44px;
             height: 44px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .toolbar .tool-btn:hover { background: #1f2937; color: #f0f6fc; }
-        .toolbar .separator { width: 70%; height: 1px; background: #30363d; margin: 6px 0; }
-        .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0d1117; }
+        
+        .toolbar .tool-btn:hover { 
+            background: var(--glass-hover); 
+            color: var(--accent);
+            border-color: var(--glass-border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .toolbar .separator { width: 50%; height: 1px; background: var(--glass-border); margin: 4px 0; opacity: 0.5; }
+        
+        .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
         .breadcrumb {
-            background: #161b22;
-            padding: 8px 20px;
-            border-bottom: 1px solid #30363d;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
             font-size: 14px;
             flex-shrink: 0;
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 5;
         }
-        .breadcrumb a { color: #58a6ff; text-decoration: none; cursor: pointer; }
-        .breadcrumb a:hover { text-decoration: underline; }
-        .breadcrumb .sep { color: #8b949e; margin: 0 4px; }
-        .breadcrumb .current { color: #f0f6fc; font-weight: 500; }
-        .file-list-wrap { flex: 1; overflow-y: auto; padding: 12px 20px; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; cursor: pointer; transition: 0.2s; }
+        .breadcrumb a:hover { color: var(--accent); text-shadow: 0 0 8px var(--accent-glow); }
+        .breadcrumb .sep { color: rgba(139, 148, 158, 0.4); margin: 0 4px; font-size: 12px; }
+        .breadcrumb .current { color: var(--text-main); font-weight: 600; }
+        
+        .file-list-wrap { flex: 1; overflow-y: auto; padding: 20px 24px; }
+        
+        .file-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 16px; 
+            align-content: flex-start;
+        }
+        
         .file-item {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 10px;
-            padding: 14px 12px;
+            padding: 20px 16px;
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            transition: 0.15s;
             cursor: pointer;
             position: relative;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .file-item:hover { background: #1f2937; border-color: #58a6ff; }
-        .file-item.selected { background: #1f2937; border-color: #58a6ff; box-shadow: 0 0 0 2px #58a6ff66; }
-        .file-item .icon { font-size: 42px; margin-bottom: 6px; color: #8b949e; }
-        .file-item .icon.folder { color: #d29922; }
-        .file-item .name { font-size: 13px; word-break: break-word; max-width: 100%; line-height: 1.3; }
-        .file-item .meta { font-size: 11px; color: #8b949e; margin-top: 4px; }
+        
+        .file-item:hover { 
+            background: var(--glass-hover);
+            transform: translateY(-4px);
+            border-color: rgba(210, 153, 34, 0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 12px var(--accent-glow);
+        }
+        
+        .file-item.selected { 
+            background: var(--glass-hover);
+            border-color: var(--accent); 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--accent), 0 0 15px var(--accent-glow);
+        }
+        
+        .file-item .icon { font-size: 48px; margin-bottom: 12px; color: var(--text-muted); transition: 0.2s; }
+        .file-item:hover .icon { color: var(--text-main); transform: scale(1.05); }
+        .file-item .icon.folder { color: var(--accent); text-shadow: 0 0 15px rgba(210, 153, 34, 0.3); }
+        
+        .file-item .name { font-size: 14px; font-weight: 500; word-break: break-word; line-height: 1.4; }
+        .file-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 6px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;}
+        
         .file-item .checkbox {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: 12px;
+            right: 12px;
             width: 18px;
             height: 18px;
-            accent-color: #58a6ff;
+            accent-color: var(--accent);
             cursor: pointer;
+            opacity: 0;
+            transition: 0.2s;
         }
+        .file-item:hover .checkbox, .file-item.selected .checkbox { opacity: 1; }
+        
         .file-item .actions-overlay {
             position: absolute;
-            bottom: 8px;
-            left: 8px;
+            bottom: 12px;
             display: flex;
-            gap: 6px;
+            gap: 8px;
+            opacity: 0;
+            transition: 0.2s;
+            transform: translateY(10px);
         }
+        .file-item:hover .actions-overlay { opacity: 1; transform: translateY(0); }
+        
         .file-item .actions-overlay button {
-            background: #0d1117cc;
-            border: none;
-            border-radius: 4px;
-            color: #c9d1d9;
-            padding: 2px 8px;
-            font-size: 12px;
+            background: rgba(10, 12, 16, 0.9);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 6px 12px;
             cursor: pointer;
+            transition: 0.2s;
         }
-        .file-item .actions-overlay button:hover { background: #238636; }
-        .empty-msg { color: #8b949e; text-align: center; padding: 60px 0; font-size: 16px; }
+        .file-item .actions-overlay button:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+        
+        .empty-msg { 
+            color: var(--text-muted); 
+            text-align: center; 
+            padding: 80px 0; 
+            font-size: 16px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .empty-msg i { font-size: 48px; opacity: 0.5; }
+        
+        /* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-        .modal-overlay.show { display: flex; }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        
         .modal-box {
-            background: #161b22;
-            border: 1px solid #30363d;
             border-radius: 16px;
-            padding: 28px 32px;
-            max-width: 540px;
+            padding: 32px;
+            max-width: 560px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 30px var(--glass-border);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .modal-box h2 { margin-bottom: 16px; color: #f0f6fc; font-size: 22px; }
-        .modal-box label { display: block; margin: 12px 0 4px; color: #8b949e; font-size: 13px; }
-        .modal-box input, .modal-box textarea, .modal-box select {
-            width: 100%;
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: #fff;
-            font-size: 14px;
-        }
-        .modal-box textarea { min-height: 120px; resize: vertical; }
-        .modal-box .btn-group { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
-        .modal-box .btn-group button { padding: 8px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-        .modal-box .btn-primary { background: #238636; color: #fff; }
-        .modal-box .btn-primary:hover { background: #2ea043; }
-        .modal-box .btn-secondary { background: #30363d; color: #c9d1d9; }
-        .modal-box .btn-secondary:hover { background: #484f58; }
-        .modal-box .btn-danger { background: #da3633; color: #fff; }
-        .modal-box .btn-danger:hover { background: #f85149; }
+        .modal-overlay.show .modal-box { transform: scale(1); }
+        
+        .modal-box h2 { margin-bottom: 20px; color: var(--text-main); font-size: 20px; font-weight: 600; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;}
+        .modal-box label { display: block; margin: 16px 0 8px; color: var(--text-muted); font-size: 13px; font-weight: 500;}
+        .modal-box input, .modal-box textarea, .modal-box select { width: 100%; }
+        .modal-box textarea { min-height: 180px; resize: vertical; font-family: monospace; line-height: 1.5; }
+        
+        .modal-box .btn-group { display: flex; gap: 12px; margin-top: 28px; justify-content: flex-end; }
+        
         .toast {
             position: fixed;
-            bottom: 30px;
+            bottom: -100px;
             right: 30px;
-            background: #238636;
-            color: #fff;
-            padding: 14px 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 16px 24px;
             border-radius: 12px;
             z-index: 2000;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            display: none;
-            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-weight: 500;
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .toast.error { background: #da3633; }
-        .toast.info { background: #1f6feb; }
+        .toast.show { bottom: 30px; }
+        .toast.error { border-color: var(--danger); box-shadow: 0 10px 30px rgba(248, 81, 73, 0.2); }
+        .toast.error i { color: var(--danger); }
+        .toast.info i { color: var(--info); }
+        .toast.success i { color: var(--success); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 148, 158, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
         @media (max-width: 768px) {
-            .topbar .logo { display: none; }
-            .toolbar { width: 50px; }
-            .toolbar .tool-btn { font-size: 18px; width: 38px; height: 38px; }
+            .toolbar { width: 56px; }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-            .modal-box { padding: 20px; }
-        }
-        @media (max-width: 480px) {
             .topbar { flex-direction: column; align-items: stretch; }
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
-            .file-item .icon { font-size: 32px; }
+            .topbar .logo { text-align: center; margin: 0 0 10px 0; }
+            .status { justify-content: center; margin: 10px 0 0 0; }
         }
     </style>
 </head>
 <body>
 
-<!-- نوار بالایی -->
-<div class="topbar">
-    <span class="logo"><i class="fas fa-code-branch"></i> GitFM</span>
+<div class="topbar glass-panel">
+    <span class="logo"><i class="fas fa-layer-group"></i> GitFM</span>
     <div class="conn-group">
-        <input type="password" id="token" placeholder="توکن (ghp_...)" style="min-width:180px;">
-        <select id="repoSelect" style="min-width:200px;">
-            <option value="">-- انتخاب ریپو --</option>
+        <input type="password" id="token" placeholder="Token (ghp_...)" style="flex: 1; min-width:140px;">
+        <select id="repoSelect" style="flex: 2; min-width:160px;">
+            <option value="">-- انتخاب مخزن --</option>
         </select>
-        <input type="text" id="branch" placeholder="branch" value="main" style="min-width:80px;">
-        <button class="btn" onclick="connect()"><i class="fas fa-plug"></i> اتصال</button>
-        <button class="btn btn-outline" onclick="createRepoModal()"><i class="fas fa-plus"></i> ریپو جدید</button>
-        <span class="status" id="connStatus">⛔ غیرمتصل</span>
+        <input type="text" id="branch" placeholder="Branch" value="main" style="width: 90px; text-align: center;">
+        <button class="btn" onclick="connect()"><i class="fas fa-link"></i> اتصال</button>
+        <button class="btn btn-outline" onclick="createRepoModal()"><i class="fas fa-plus"></i> مخزن جدید</button>
     </div>
+    <span class="status" id="connStatus"><i class="fas fa-circle-xmark"></i> آفلاین</span>
 </div>
 
-<!-- بدنه -->
 <div class="main">
-    <div class="toolbar" id="toolbar">
-        <button class="tool-btn" title="بازگشت به بالا" onclick="goUp()"><i class="fas fa-arrow-up"></i></button>
+    <div class="toolbar glass-panel" id="toolbar">
+        <button class="tool-btn" title="بازگشت به بالا" onclick="goUp()"><i class="fas fa-level-up-alt"></i></button>
         <div class="separator"></div>
         <button class="tool-btn" title="پوشه جدید" onclick="newFolderModal()"><i class="fas fa-folder-plus"></i></button>
-        <button class="tool-btn" title="آپلود فایل" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-upload"></i></button>
+        <button class="tool-btn" title="آپلود فایل" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-cloud-upload-alt"></i></button>
         <input type="file" id="fileUpload" multiple style="display:none" onchange="uploadFiles(this.files)">
-        <button class="tool-btn" title="حذف انتخاب‌شده‌ها" onclick="deleteSelected()"><i class="fas fa-trash"></i></button>
-        <button class="tool-btn" title="دانلود انتخاب‌شده‌ها (zip)" onclick="downloadZip()"><i class="fas fa-file-archive"></i></button>
-        <button class="tool-btn" title="آنزیپ و آپلود" onclick="unzipModal()"><i class="fas fa-file-zipper"></i></button>
+        <button class="tool-btn" title="حذف انتخاب‌شده‌ها" onclick="deleteSelected()"><i class="fas fa-trash-alt"></i></button>
+        <button class="tool-btn" title="دانلود (Zip)" onclick="downloadZip()"><i class="fas fa-file-archive"></i></button>
+        <button class="tool-btn" title="آنزیپ و آپلود" onclick="unzipModal()"><i class="fas fa-box-open"></i></button>
         <div class="separator"></div>
-        <button class="tool-btn" title="ویرایش فایل متنی" onclick="editSelected()"><i class="fas fa-edit"></i></button>
-        <button class="tool-btn" title="تغییر نام" onclick="renameSelected()"><i class="fas fa-i-cursor"></i></button>
-        <button class="tool-btn" title="انتقال به..." onclick="moveSelected()"><i class="fas fa-arrows-alt-h"></i></button>
+        <button class="tool-btn" title="ویرایش متن" onclick="editSelected()"><i class="fas fa-pen-nib"></i></button>
+        <button class="tool-btn" title="تغییر نام" onclick="renameSelected()"><i class="fas fa-keyboard"></i></button>
+        <button class="tool-btn" title="انتقال فایل" onclick="moveSelected()"><i class="fas fa-dolly"></i></button>
         <div class="separator"></div>
-        <button class="tool-btn" title="تازه‌سازی" onclick="loadCurrentDir()"><i class="fas fa-sync"></i></button>
+        <button class="tool-btn" title="تازه‌سازی" onclick="loadCurrentDir()"><i class="fas fa-sync-alt"></i></button>
     </div>
+    
     <div class="content">
-        <div class="breadcrumb" id="breadcrumb">
-            <i class="fas fa-home" style="color:#58a6ff;"></i>
+        <div class="breadcrumb glass-panel" id="breadcrumb">
+            <i class="fas fa-hdd" style="color:var(--accent);"></i>
             <span id="pathDisplay">/</span>
         </div>
         <div class="file-list-wrap" id="fileListWrap">
@@ -281,145 +388,181 @@
     </div>
 </div>
 
-<!-- مودال‌ها -->
 <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-box" id="modalBox">
+    <div class="modal-box glass-panel" id="modalBox">
         <h2 id="modalTitle">عنوان</h2>
         <div id="modalBody"></div>
         <div class="btn-group" id="modalButtons"></div>
     </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast">
+    <i class="fas fa-info-circle" id="toastIcon"></i>
+    <span id="toastMsg">پیام</span>
+</div>
 
 <script>
-    // ====================== وضعیت ======================
+    // ====================== تنظیمات و پیکربندی ======================
+    const PROXY_URL = 'https://superscrap.shervin003254024.workers.dev/';
+    
     let state = {
-        token: '',
-        owner: '',
-        repo: '',
-        branch: 'main',
-        currentPath: '',
-        files: [],
-        selected: new Set(),
-        repos: [],
+        token: '', owner: '', repo: '', branch: 'main',
+        currentPath: '', files: [], selected: new Set(), repos: []
     };
 
-    // ====================== توابع کمکی ======================
-    function getToken() {
-        return document.getElementById('token').value.trim();
+    // ====================== ابزارهای پردازش داده ======================
+    
+    // انکد و دیکد ایمن Base64 برای پشتیبانی کامل از کاراکترهای فارسی (UTF-8)
+    function encodeUTF8ToBase64(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+            return String.fromCharCode('0x' + p1);
+        }));
+    }
+    
+    function decodeBase64ToUTF8(b64) {
+        return decodeURIComponent(atob(b64).split('').map(c => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
     }
 
-    function getHeaders(token) {
-        return {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-        };
-    }
-
-    async function githubFetch(url, options = {}) {
-        const token = getToken();
-        if (!token) throw new Error('توکن وارد نشده');
-        const headers = getHeaders(token);
-        const res = await fetch(url, {
-            ...options,
-            headers: { ...headers, ...options.headers }
+    // خواندن فایل به عنوان Base64 یکپارچه
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-        if (!res.ok) {
-            let msg = await res.text().catch(() => '');
-            // اگر 404 باشد و محتوای پیام "This repository is empty" باشد، آن را به حالت خالی تفسیر می‌کنیم
-            if (res.status === 404 && msg.includes('empty')) {
-                // خطای خاص ریپوی خالی
-                throw new Error('EMPTY_REPO');
+    }
+
+    // ====================== هسته شبکه هیبریدی (Fallback Router) ======================
+    
+    async function smartFetch(url, options = {}, responseType = 'json') {
+        const token = document.getElementById('token').value.trim();
+        const headers = { ...options.headers };
+        if (token) headers['Authorization'] = `token ${token}`;
+        if (responseType === 'json') headers['Accept'] = 'application/vnd.github.v3+json';
+
+        // مسیر 1: پروکسی (برای دور زدن فیلتر/CORS)، مسیر 2: دایرکت API (پشتیبان)
+        const routes = [
+            PROXY_URL + '?url=' + encodeURIComponent(url),
+            url 
+        ];
+
+        let lastError = null;
+        let isCriticalError = false;
+
+        for (let route of routes) {
+            try {
+                const res = await fetch(route, { ...options, headers });
+                
+                if (res.ok) {
+                    return responseType === 'blob' ? await res.blob() : await res.json();
+                }
+
+                // هندلینگ خطاهای خاص گیت‌هاب
+                const errorData = await res.json().catch(() => ({ message: '' }));
+                const errorMsg = errorData.message || res.statusText;
+
+                if (res.status === 401) { isCriticalError = true; throw new Error('توکن نامعتبر است (401)'); }
+                if (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0') {
+                    isCriticalError = true; throw new Error('محدودیت درخواست گیت‌هاب (Rate Limit) تکمیل شد');
+                }
+                if (res.status === 404) {
+                    if (url.includes('/contents/') && !url.includes(state.currentPath + '/')) {
+                        throw new Error('EMPTY_REPO');
+                    }
+                }
+                if (res.status === 409) throw new Error('تداخل در درخواست (Conflict 409) - کمی صبر کنید');
+
+                throw new Error(`خطای سرور (${res.status}): ${errorMsg}`);
+            } catch (err) {
+                lastError = err;
+                if (isCriticalError) break; // در خطاهای امنیتی یا محدودیت، مسیر بعدی را تست نکن
+                console.warn(`[Fallback] مسیر شکست خورد: ${route} | علت:`, err.message);
             }
-            throw new Error(`خطا ${res.status}: ${msg || res.statusText}`);
         }
-        return res.json();
+        throw lastError || new Error('خطای ناشناخته در برقراری ارتباط');
     }
 
-    // تابع جدید برای دریافت محتوای خام فایل (با هدر Authorization)
-    async function fetchRawFile(path) {
-        const token = getToken();
-        if (!token) throw new Error('توکن وارد نشده');
-        const url = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${path}`;
-        const res = await fetch(url, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-        if (!res.ok) throw new Error(`خطا در دریافت فایل: ${res.status}`);
-        return res;
-    }
-
+    // ====================== رابط کاربری (UI) ======================
+    
     function showToast(msg, type = 'info') {
         const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'toast ' + type;
-        t.style.display = 'block';
+        document.getElementById('toastMsg').textContent = msg;
+        const icon = document.getElementById('toastIcon');
+        
+        t.className = `toast show ${type}`;
+        if (type === 'error') icon.className = 'fas fa-exclamation-triangle';
+        else if (type === 'success') icon.className = 'fas fa-check-circle';
+        else icon.className = 'fas fa-info-circle';
+        
         clearTimeout(t._timeout);
-        t._timeout = setTimeout(() => t.style.display = 'none', 4000);
-    }
-
-    function closeModal() {
-        document.getElementById('modalOverlay').classList.remove('show');
+        t._timeout = setTimeout(() => { t.classList.remove('show'); }, 4000);
     }
 
     function openModal(title, bodyHTML, buttons = []) {
-        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalTitle').innerHTML = title;
         document.getElementById('modalBody').innerHTML = bodyHTML;
         const btnContainer = document.getElementById('modalButtons');
         btnContainer.innerHTML = '';
         buttons.forEach(b => {
             const btn = document.createElement('button');
-            btn.textContent = b.label;
-            btn.className = b.class || 'btn-secondary';
-            if (b.onclick) btn.onclick = () => { b.onclick(); };
+            btn.innerHTML = b.label;
+            btn.className = `btn ${b.class || 'btn-outline'}`;
+            if(b.class && !b.class.includes('outline')) btn.style.color = '#000';
+            if (b.onclick) btn.onclick = b.onclick;
             btnContainer.appendChild(btn);
         });
         document.getElementById('modalOverlay').classList.add('show');
     }
 
-    // ====================== مدیریت ریپوها ======================
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+    // ====================== منطق برنامه ======================
+
     async function fetchRepos(token) {
         try {
-            const data = await githubFetch('https://api.github.com/user/repos?per_page=100&sort=updated');
+            const data = await smartFetch('https://api.github.com/user/repos?per_page=100&sort=updated');
             state.repos = data;
             const select = document.getElementById('repoSelect');
             select.innerHTML = '';
             if (!data || data.length === 0) {
-                select.innerHTML = '<option value="">-- هیچ ریپویی یافت نشد --</option>';
+                select.innerHTML = '<option value="">-- مخزنی یافت نشد --</option>';
                 return null;
             }
             data.forEach(repo => {
                 const opt = document.createElement('option');
                 opt.value = repo.full_name;
-                opt.textContent = repo.full_name + (repo.private ? ' (خصوصی)' : ' (عمومی)');
+                opt.textContent = `${repo.name} ${repo.private ? '(Private)' : ''}`;
                 select.appendChild(opt);
             });
+            
             const savedRepo = localStorage.getItem('repo');
-            if (savedRepo && data.some(r => r.full_name === savedRepo)) {
-                select.value = savedRepo;
-            } else if (!select.value && data.length > 0) {
-                select.value = data[0].full_name;
-            }
+            if (savedRepo && data.some(r => r.full_name === savedRepo)) select.value = savedRepo;
+            else select.value = data[0].full_name;
+            
             return select.value;
         } catch (err) {
-            if (err.message === 'EMPTY_REPO') {
-                // اینجا نباید بیاید چون fetchRepos برای لیست ریپوهاست نه محتوا
-            }
-            showToast('خطا در دریافت ریپوها: ' + err.message, 'error');
+            showToast(err.message, 'error');
             return null;
         }
     }
 
-    // ====================== اتصال ======================
     async function connect() {
-        const token = getToken();
-        if (!token) { showToast('لطفاً توکن را وارد کنید', 'error'); return; }
+        const token = document.getElementById('token').value.trim();
+        if (!token) return showToast('توکن الزامی است', 'error');
         state.token = token;
         localStorage.setItem('token', token);
 
+        const statusEl = document.getElementById('connStatus');
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال اتصال...';
+        statusEl.style.color = 'var(--text-muted)';
+
         const selectedRepo = await fetchRepos(token);
         if (!selectedRepo) {
-            document.getElementById('connStatus').textContent = '⛔ خطا در دریافت ریپوها';
+            statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> خطا در اتصال';
+            statusEl.style.color = 'var(--danger)';
             return;
         }
 
@@ -429,41 +572,35 @@
         state.branch = document.getElementById('branch').value.trim() || 'main';
         state.currentPath = '';
         state.selected = new Set();
+        
         localStorage.setItem('repo', selectedRepo);
         localStorage.setItem('branch', state.branch);
 
-        document.getElementById('connStatus').textContent = `✅ ${selectedRepo} : ${state.branch}`;
-        document.getElementById('connStatus').style.color = '#3fb950';
+        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> متصل: ${repo}`;
+        statusEl.style.color = 'var(--success)';
         loadCurrentDir();
     }
 
-    // تغییر ریپو از منو
     document.getElementById('repoSelect').addEventListener('change', function() {
         if (this.value && state.token) {
             const [owner, repo] = this.value.split('/');
-            state.owner = owner;
-            state.repo = repo;
-            state.currentPath = '';
-            state.selected = new Set();
+            state.owner = owner; state.repo = repo;
+            state.currentPath = ''; state.selected = new Set();
             localStorage.setItem('repo', this.value);
-            document.getElementById('connStatus').textContent = `✅ ${this.value} : ${state.branch}`;
+            document.getElementById('connStatus').innerHTML = `<i class="fas fa-check-circle"></i> متصل: ${repo}`;
             loadCurrentDir();
         }
     });
 
-    // ====================== مسیر و بارگذاری فایل‌ها ======================
     function updateBreadcrumb() {
         const parts = state.currentPath.split('/').filter(p => p);
-        let html = `<a onclick="navigateTo('')">ریشه</a>`;
+        let html = `<a onclick="navigateTo('')"><i class="fas fa-home"></i> ریشه</a>`;
         let cumul = '';
         parts.forEach((p, i) => {
             cumul += p + '/';
-            html += `<span class="sep">/</span>`;
-            if (i === parts.length - 1) {
-                html += `<span class="current">${p}</span>`;
-            } else {
-                html += `<a onclick="navigateTo('${cumul.slice(0,-1)}')">${p}</a>`;
-            }
+            html += `<span class="sep"><i class="fas fa-chevron-left"></i></span>`;
+            if (i === parts.length - 1) html += `<span class="current">${p}</span>`;
+            else html += `<a onclick="navigateTo('${cumul.slice(0,-1)}')">${p}</a>`;
         });
         document.getElementById('pathDisplay').innerHTML = html;
     }
@@ -476,36 +613,31 @@
 
     function goUp() {
         const parts = state.currentPath.split('/').filter(p => p);
-        parts.pop();
-        navigateTo(parts.join('/'));
+        if(parts.length > 0) {
+            parts.pop();
+            navigateTo(parts.join('/'));
+        }
     }
 
     async function loadCurrentDir() {
         const container = document.getElementById('fileContainer');
-        container.innerHTML = '<div class="empty-msg"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری...</div>';
-        if (!state.owner || !state.repo || !state.token) {
-            container.innerHTML = '<div class="empty-msg">لطفاً ابتدا اتصال برقرار کنید</div>';
-            return;
-        }
+        container.innerHTML = '<div class="empty-msg"><i class="fas fa-circle-notch fa-spin"></i><span>در حال دریافت ساختار...</span></div>';
+        
+        if (!state.owner || !state.repo) return container.innerHTML = '<div class="empty-msg"><i class="fas fa-plug"></i>ابتدا متصل شوید</div>';
 
         try {
-            const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${state.currentPath}`;
-            const data = await githubFetch(url);
-            if (!Array.isArray(data)) {
-                container.innerHTML = '<div class="empty-msg">این مسیر یک فایل است، نمی‌توان باز کرد</div>';
-                return;
-            }
+            const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${state.currentPath}?ref=${state.branch}`;
+            const data = await smartFetch(url);
+            
+            if (!Array.isArray(data)) return container.innerHTML = '<div class="empty-msg"><i class="fas fa-file"></i>این مسیر یک فایل منفرد است</div>';
             state.files = data;
             renderFiles(data);
         } catch (err) {
-            if (err.message === 'EMPTY_REPO') {
-                // ریپو خالی است یا پوشه خالی
-                container.innerHTML = '<div class="empty-msg">📭 این ریپازیتوری خالی است. برای شروع یک فایل آپلود کنید.</div>';
+            if (err.message.includes('EMPTY_REPO') || err.message.includes('404')) {
                 state.files = [];
                 renderFiles([]);
             } else {
-                container.innerHTML = `<div class="empty-msg" style="color:#f85149;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
-                showToast(err.message, 'error');
+                container.innerHTML = `<div class="empty-msg" style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i><span>${err.message}</span></div>`;
             }
         }
     }
@@ -513,37 +645,48 @@
     function renderFiles(files) {
         const container = document.getElementById('fileContainer');
         if (!files || files.length === 0) {
-            container.innerHTML = '<div class="empty-msg">📭 پوشه خالی است</div>';
+            container.innerHTML = '<div class="empty-msg"><i class="fas fa-box-open"></i><span>پوشه خالی است</span></div>';
             return;
         }
+        
         let html = '';
         const sorted = files.sort((a, b) => {
             if (a.type === 'dir' && b.type !== 'dir') return -1;
             if (a.type !== 'dir' && b.type === 'dir') return 1;
             return a.name.localeCompare(b.name);
         });
+        
         sorted.forEach(item => {
             const isDir = item.type === 'dir';
-            const icon = isDir ? '<i class="fas fa-folder icon folder"></i>' : '<i class="fas fa-file icon"></i>';
             const size = isDir ? '' : `${(item.size / 1024).toFixed(1)} KB`;
             const selected = state.selected.has(item.path) ? 'selected' : '';
             const ext = item.name.split('.').pop().toLowerCase();
-            const isText = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'c', 'cpp', 'h', 'sh', 'yml', 'yaml', 'toml', 'ini', 'cfg'].includes(ext);
+            const isText = ['txt','md','json','html','css','js','py','yml','yaml','xml','ini'].includes(ext);
+            
+            let iconClass = isDir ? 'fas fa-folder folder' : 'fas fa-file-alt';
+            if (!isDir) {
+                if (['png','jpg','jpeg','gif','svg'].includes(ext)) iconClass = 'fas fa-file-image';
+                else if (['zip','tar','gz','rar'].includes(ext)) iconClass = 'fas fa-file-archive';
+                else if (['mp4','mp3','wav'].includes(ext)) iconClass = 'fas fa-file-audio';
+            }
+
             html += `
-                <div class="file-item ${selected}" data-path="${item.path}" data-type="${item.type}">
-                    <input type="checkbox" class="checkbox" ${state.selected.has(item.path) ? 'checked' : ''} 
-                           onchange="toggleSelect('${item.path}', this.checked)">
-                    <div class="icon">${isDir ? '<i class="fas fa-folder"></i>' : '<i class="fas fa-file"></i>'}</div>
+                <div class="file-item glass-panel ${selected}" data-path="${item.path}">
+                    <input type="checkbox" class="checkbox" ${state.selected.has(item.path) ? 'checked' : ''} onchange="toggleSelect('${item.path}', this.checked)">
+                    <i class="${iconClass} icon"></i>
                     <div class="name">${item.name}</div>
-                    <div class="meta">${size}</div>
+                    ${size ? `<div class="meta">${size}</div>` : ''}
                     <div class="actions-overlay">
-                        ${isDir ? `<button onclick="navigateTo('${item.path}')"><i class="fas fa-sign-in-alt"></i></button>` :
-                                  `<button onclick="downloadFile('${item.path}')"><i class="fas fa-download"></i></button>`}
-                        ${!isDir && isText ? `<button onclick="editFile('${item.path}')"><i class="fas fa-edit"></i></button>` : ''}
+                        ${isDir ? 
+                            `<button onclick="navigateTo('${item.path}')" title="ورود"><i class="fas fa-sign-in-alt"></i></button>` :
+                            `<button onclick="downloadFile('${item.path}')" title="دانلود"><i class="fas fa-cloud-download-alt"></i></button>`
+                        }
+                        ${!isDir && isText ? `<button onclick="editFile('${item.path}')" title="ویرایش"><i class="fas fa-edit"></i></button>` : ''}
                     </div>
                 </div>
             `;
         });
+        
         container.innerHTML = html;
         container.querySelectorAll('.file-item').forEach(el => {
             el.addEventListener('click', function(e) {
@@ -556,68 +699,52 @@
         });
     }
 
-    // ====================== انتخاب‌ها ======================
     function toggleSelect(path, checked) {
         if (checked) state.selected.add(path);
         else state.selected.delete(path);
         document.querySelectorAll('.file-item').forEach(el => {
-            if (el.dataset.path === path) {
-                el.classList.toggle('selected', checked);
-            }
+            if (el.dataset.path === path) el.classList.toggle('selected', checked);
         });
     }
 
-    function getSelectedItems() {
-        return state.files.filter(f => state.selected.has(f.path));
-    }
+    function getSelectedItems() { return state.files.filter(f => state.selected.has(f.path)); }
 
-    // ====================== عملیات فایل (اصلاح شده با fetchRawFile) ======================
+    // ====================== عملیات فایل‌ها ======================
 
-    // آپلود
     async function uploadFiles(files) {
-        if (!state.owner || !state.repo) { showToast('ابتدا یک ریپو انتخاب کنید', 'error'); return; }
+        if (!state.owner) return showToast('مخزنی انتخاب نشده', 'error');
         const path = state.currentPath ? state.currentPath + '/' : '';
+        
         for (let file of files) {
             try {
-                showToast(`⏳ آپلود ${file.name} ...`, 'info');
-                const reader = new FileReader();
-                const content = await new Promise((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
+                showToast(`در حال آپلود ${file.name}...`, 'info');
+                const content = await readFileAsBase64(file);
                 const filePath = path + file.name;
                 const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${filePath}`;
+                
                 let sha = null;
                 try {
-                    const check = await githubFetch(url);
+                    const check = await smartFetch(url + `?ref=${state.branch}`);
                     if (check && check.sha) sha = check.sha;
-                } catch (e) { /* فایل وجود ندارد */ }
-                const payload = {
-                    message: `Upload ${file.name}`,
-                    content: content,
-                    branch: state.branch,
-                };
+                } catch (e) {} // Ignore if not exists
+                
+                const payload = { message: `Upload ${file.name}`, content: content, branch: state.branch };
                 if (sha) payload.sha = sha;
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error(await res.text());
-                showToast(`✅ ${file.name} آپلود شد`, 'info');
+                
+                await smartFetch(url, { method: 'PUT', body: JSON.stringify(payload) });
+                showToast(`${file.name} با موفقیت آپلود شد`, 'success');
             } catch (err) {
-                showToast(`❌ خطا در ${file.name}: ${err.message}`, 'error');
+                showToast(`خطا در ${file.name}: ${err.message}`, 'error');
             }
         }
         loadCurrentDir();
     }
 
-    // دانلود یک فایل (با هدر Authorization)
     async function downloadFile(path) {
         try {
-            const res = await fetchRawFile(path);
-            const blob = await res.blob();
+            showToast('در حال آماده‌سازی دانلود...', 'info');
+            const url = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${path}`;
+            const blob = await smartFetch(url, {}, 'blob');
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = path.split('/').pop();
@@ -625,339 +752,284 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            showToast('دانلود شروع شد', 'info');
-        } catch (e) {
-            showToast(e.message, 'error');
-        }
+        } catch (e) { showToast(e.message, 'error'); }
     }
 
-    // حذف انتخاب‌شده‌ها
     async function deleteSelected() {
         const items = getSelectedItems();
-        if (items.length === 0) { showToast('هیچ فایلی انتخاب نشده', 'error'); return; }
-        if (!confirm(`آیا ${items.length} مورد حذف شوند؟`)) return;
+        if (!items.length) return showToast('فایلی انتخاب نشده', 'error');
+        if (!confirm(`آیا از حذف ${items.length} مورد اطمینان دارید؟`)) return;
+        
+        showToast('در حال حذف، لطفاً صبر کنید...', 'info');
         for (let item of items) {
             try {
                 const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}`;
-                await fetch(url, {
+                await smartFetch(url, {
                     method: 'DELETE',
-                    headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: `Delete ${item.path}`, sha: item.sha, branch: state.branch })
                 });
                 state.selected.delete(item.path);
-                showToast(`🗑️ ${item.name} حذف شد`, 'info');
-            } catch (e) {
-                showToast(`خطا در حذف ${item.name}: ${e.message}`, 'error');
-            }
+            } catch (e) { showToast(`خطا در حذف ${item.name}`, 'error'); }
         }
+        showToast('حذف با موفقیت انجام شد', 'success');
         loadCurrentDir();
     }
 
-    // پوشه جدید
     function newFolderModal() {
-        openModal('پوشه جدید', `
-            <label>نام پوشه</label>
-            <input type="text" id="newFolderName" placeholder="my-folder">
+        openModal('<i class="fas fa-folder-plus"></i> ایجاد پوشه جدید', `
+            <label>نام پوشه:</label>
+            <input type="text" id="newFolderName" placeholder="مثال: src/assets" autofocus>
         `, [
-            { label: 'ایجاد', class: 'btn-primary', onclick: async () => {
+            { label: '<i class="fas fa-check"></i> ایجاد', class: 'btn', onclick: async () => {
                 const name = document.getElementById('newFolderName').value.trim();
-                if (!name) { showToast('نام را وارد کنید', 'error'); return; }
-                const path = state.currentPath ? state.currentPath + '/' + name : name;
+                if (!name) return showToast('نام الزامی است', 'error');
+                const path = state.currentPath ? `${state.currentPath}/${name}` : name;
                 try {
                     const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${path}/.gitkeep`;
-                    await fetch(url, {
+                    await smartFetch(url, {
                         method: 'PUT',
-                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            message: `Create folder ${name}`,
-                            content: btoa(''),
-                            branch: state.branch
-                        })
+                        body: JSON.stringify({ message: `Create folder ${name}`, content: encodeUTF8ToBase64(''), branch: state.branch })
                     });
-                    showToast(`پوشه ${name} ایجاد شد`, 'info');
-                    closeModal();
-                    loadCurrentDir();
-                } catch (e) {
-                    showToast(e.message, 'error');
-                }
+                    showToast('پوشه ایجاد شد', 'success');
+                    closeModal(); loadCurrentDir();
+                } catch (e) { showToast(e.message, 'error'); }
             }},
-            { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+            { label: 'انصراف', onclick: closeModal }
         ]);
     }
 
-    // ویرایش فایل متنی (با fetchRawFile)
     async function editFile(path) {
         try {
-            const res = await fetchRawFile(path);
-            const content = await res.text();
-            openModal(`ویرایش: ${path.split('/').pop()}`, `
-                <textarea id="editContent">${content}</textarea>
+            showToast('در حال دریافت محتوا...', 'info');
+            const urlInfo = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${path}?ref=${state.branch}`;
+            const fileData = await smartFetch(urlInfo);
+            
+            // کدگشایی ایمن
+            const content = decodeBase64ToUTF8(fileData.content.replace(/\n/g, ''));
+            
+            openModal(`<i class="fas fa-edit"></i> ویرایش: ${path.split('/').pop()}`, `
+                <textarea id="editContent" spellcheck="false">${content}</textarea>
             `, [
-                { label: 'ذخیره', class: 'btn-primary', onclick: async () => {
+                { label: '<i class="fas fa-save"></i> ذخیره', class: 'btn', onclick: async () => {
                     const newContent = document.getElementById('editContent').value;
-                    const encoded = btoa(unescape(encodeURIComponent(newContent)));
-                    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${path}`;
+                    const encoded = encodeUTF8ToBase64(newContent);
                     try {
-                        const data = await githubFetch(url);
-                        await fetch(url, {
+                        await smartFetch(urlInfo, {
                             method: 'PUT',
-                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                message: `Edit ${path}`,
-                                content: encoded,
-                                sha: data.sha,
-                                branch: state.branch
-                            })
+                            body: JSON.stringify({ message: `Update ${path}`, content: encoded, sha: fileData.sha, branch: state.branch })
                         });
-                        showToast('فایل ذخیره شد', 'info');
-                        closeModal();
-                        loadCurrentDir();
-                    } catch (e) {
-                        showToast(e.message, 'error');
-                    }
+                        showToast('فایل با موفقیت ذخیره شد', 'success');
+                        closeModal(); loadCurrentDir();
+                    } catch (e) { showToast(e.message, 'error'); }
                 }},
-                { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+                { label: 'بستن', onclick: closeModal }
             ]);
-        } catch (e) {
-            showToast(e.message, 'error');
-        }
+        } catch (e) { showToast('خطا در دریافت متن: ' + e.message, 'error'); }
     }
 
     function editSelected() {
         const items = getSelectedItems();
-        if (items.length !== 1 || items[0].type === 'dir') {
-            showToast('یک فایل متنی را انتخاب کنید', 'error');
-            return;
-        }
+        if (items.length !== 1 || items[0].type === 'dir') return showToast('لطفاً یک فایل متنی را انتخاب کنید', 'error');
         editFile(items[0].path);
     }
 
-    // تغییر نام (با fetchRawFile)
     async function renameSelected() {
         const items = getSelectedItems();
-        if (items.length !== 1) { showToast('یک فایل یا پوشه انتخاب کنید', 'error'); return; }
+        if (items.length !== 1) return showToast('یک فایل/پوشه انتخاب کنید', 'error');
         const item = items[0];
-        openModal('تغییر نام', `
-            <label>نام جدید</label>
-            <input type="text" id="newName" value="${item.name}">
+        
+        openModal('<i class="fas fa-i-cursor"></i> تغییر نام', `
+            <label>نام جدید:</label>
+            <input type="text" id="newName" value="${item.name}" autofocus>
         `, [
-            { label: 'تغییر', class: 'btn-primary', onclick: async () => {
+            { label: '<i class="fas fa-check"></i> اعمال تغییر', class: 'btn', onclick: async () => {
                 const newName = document.getElementById('newName').value.trim();
-                if (!newName || newName === item.name) { closeModal(); return; }
+                if (!newName || newName === item.name) return closeModal();
+                showToast('در حال اعمال تغییر...', 'info');
+                
                 try {
                     const oldPath = item.path;
                     const dir = oldPath.substring(0, oldPath.lastIndexOf('/') + 1);
                     const newPath = dir + newName;
-                    // دریافت محتوا با fetchRawFile
-                    const res = await fetchRawFile(oldPath);
-                    const blob = await res.blob();
-                    const reader = new FileReader();
-                    const content = await new Promise((resolve, reject) => {
-                        reader.onload = () => resolve(reader.result.split(',')[1]);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                    const urlNew = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`;
-                    await fetch(urlNew, {
+                    
+                    const fileData = await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${oldPath}?ref=${state.branch}`);
+                    
+                    await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`, {
                         method: 'PUT',
-                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            message: `Rename ${item.name} to ${newName}`,
-                            content: content,
-                            branch: state.branch
-                        })
+                        body: JSON.stringify({ message: `Rename to ${newName}`, content: fileData.content.replace(/\n/g, ''), branch: state.branch })
                     });
-                    const urlOld = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${oldPath}`;
-                    await fetch(urlOld, {
+                    
+                    await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${oldPath}`, {
                         method: 'DELETE',
-                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: `Delete old ${item.name}`, sha: item.sha, branch: state.branch })
+                        body: JSON.stringify({ message: `Delete old name`, sha: fileData.sha, branch: state.branch })
                     });
-                    showToast('تغییر نام انجام شد', 'info');
-                    closeModal();
-                    loadCurrentDir();
-                } catch (e) {
-                    showToast(e.message, 'error');
-                }
+                    
+                    showToast('نام تغییر یافت', 'success');
+                    closeModal(); loadCurrentDir();
+                } catch (e) { showToast(e.message, 'error'); }
             }},
-            { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+            { label: 'انصراف', onclick: closeModal }
         ]);
     }
 
-    // انتقال (با fetchRawFile)
-    async function moveSelected() {
+    function moveSelected() {
         const items = getSelectedItems();
-        if (items.length === 0) { showToast('حداقل یک فایل انتخاب کنید', 'error'); return; }
-        openModal('انتقال به پوشه', `
-            <label>مسیر مقصد (نسبی از ریشه ریپو، مثل: folder/sub)</label>
-            <input type="text" id="destPath" placeholder="target-folder" value="${state.currentPath}">
+        if (!items.length) return showToast('فایلی انتخاب نشده', 'error');
+        
+        openModal('<i class="fas fa-dolly"></i> انتقال فایل‌ها', `
+            <label>مسیر مقصد (نسبت به ریشه):</label>
+            <input type="text" id="destPath" placeholder="folder/subfolder" value="${state.currentPath}">
         `, [
-            { label: 'انتقال', class: 'btn-primary', onclick: async () => {
+            { label: '<i class="fas fa-truck"></i> انتقال', class: 'btn', onclick: async () => {
                 const dest = document.getElementById('destPath').value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+                showToast('در حال جابه‌جایی...', 'info');
+                
                 for (let item of items) {
                     try {
-                        const newPath = dest ? dest + '/' + item.name : item.name;
-                        const res = await fetchRawFile(item.path);
-                        const blob = await res.blob();
-                        const reader = new FileReader();
-                        const content = await new Promise((resolve, reject) => {
-                            reader.onload = () => resolve(reader.result.split(',')[1]);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
-                        const urlNew = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`;
-                        await fetch(urlNew, {
+                        const newPath = dest ? `${dest}/${item.name}` : item.name;
+                        const fileData = await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}?ref=${state.branch}`);
+                        
+                        await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${newPath}`, {
                             method: 'PUT',
-                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                message: `Move ${item.name}`,
-                                content: content,
-                                branch: state.branch
-                            })
+                            body: JSON.stringify({ message: `Move ${item.name}`, content: fileData.content.replace(/\n/g, ''), branch: state.branch })
                         });
-                        const urlOld = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}`;
-                        await fetch(urlOld, {
+                        
+                        await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${item.path}`, {
                             method: 'DELETE',
-                            headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: `Delete after move`, sha: item.sha, branch: state.branch })
+                            body: JSON.stringify({ message: `Delete moved file`, sha: fileData.sha, branch: state.branch })
                         });
                         state.selected.delete(item.path);
-                    } catch (e) {
-                        showToast(`خطا در ${item.name}: ${e.message}`, 'error');
-                    }
+                    } catch (e) { console.error(e); }
                 }
-                closeModal();
-                loadCurrentDir();
+                showToast('انتقال کامل شد', 'success');
+                closeModal(); loadCurrentDir();
             }},
-            { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+            { label: 'انصراف', onclick: closeModal }
         ]);
     }
 
-    // دانلود zip (با fetchRawFile)
     async function downloadZip() {
         const items = getSelectedItems();
-        if (items.length === 0) { showToast('چیزی انتخاب نشده', 'error'); return; }
+        if (!items.length) return showToast('چیزی انتخاب نشده', 'error');
+        
         try {
+            showToast('در حال جمع‌آوری فایل‌ها و ساخت Zip...', 'info');
             const zip = new JSZip();
             for (let item of items) {
-                if (item.type === 'dir') continue;
-                const res = await fetchRawFile(item.path);
-                const blob = await res.blob();
+                if (item.type === 'dir') continue; // Skip folders for simplicity in basic zip
+                const rawUrl = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${item.path}`;
+                const blob = await smartFetch(rawUrl, {}, 'blob');
                 zip.file(item.name, blob);
             }
             const zipBlob = await zip.generateAsync({ type: 'blob' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(zipBlob);
-            link.download = 'selected.zip';
+            link.download = `GitFM_Export_${Date.now()}.zip`;
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            showToast('فایل zip ساخته شد', 'info');
-        } catch (e) {
-            showToast(e.message, 'error');
-        }
+            link.remove();
+            showToast('فایل Zip آماده و دانلود شد', 'success');
+        } catch (e) { showToast(e.message, 'error'); }
     }
 
-    // آنزیپ و آپلود
     function unzipModal() {
-        openModal('آپلود و استخراج zip', `
-            <label>فایل zip را انتخاب کنید</label>
-            <input type="file" id="zipFileInput" accept=".zip">
-            <br><br>
-            <label>مسیر مقصد (اختیاری)</label>
-            <input type="text" id="unzipDest" placeholder="مسیر در ریپو" value="${state.currentPath}">
+        openModal('<i class="fas fa-box-open"></i> استخراج Zip در مخزن', `
+            <label>فایل Zip را انتخاب کنید:</label>
+            <input type="file" id="zipFileInput" accept=".zip" style="padding: 10px 0;">
+            <label>مسیر مقصد در گیت‌هاب (خالی = مسیر فعلی):</label>
+            <input type="text" id="unzipDest" placeholder="path/to/folder" value="${state.currentPath}">
         `, [
-            { label: 'استخراج', class: 'btn-primary', onclick: async () => {
+            { label: '<i class="fas fa-upload"></i> آپلود و استخراج', class: 'btn', onclick: async () => {
                 const fileInput = document.getElementById('zipFileInput');
-                const dest = document.getElementById('unzipDest').value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
-                if (!fileInput.files || !fileInput.files[0]) { showToast('فایل zip را انتخاب کنید', 'error'); return; }
+                const dest = document.getElementById('unzipDest').value.trim().replace(/^\/+|\/+$/g, '');
+                
+                if (!fileInput.files[0]) return showToast('فایلی انتخاب نشده', 'error');
+                
                 try {
+                    showToast('در حال خواندن فایل Zip...', 'info');
                     const zip = await JSZip.loadAsync(fileInput.files[0]);
-                    const promises = [];
-                    zip.forEach((relativePath, zipEntry) => {
-                        if (zipEntry.dir) return;
-                        const fullPath = dest ? dest + '/' + relativePath : relativePath;
-                        promises.push((async () => {
-                            const content = await zipEntry.async('base64');
-                            const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/${fullPath}`;
-                            await fetch(url, {
-                                method: 'PUT',
-                                headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    message: `Unzip ${relativePath}`,
-                                    content: content,
-                                    branch: state.branch
-                                })
-                            });
-                        })());
-                    });
-                    await Promise.all(promises);
-                    showToast('استخراج کامل شد', 'info');
-                    closeModal();
-                    loadCurrentDir();
-                } catch (e) {
-                    showToast(e.message, 'error');
-                }
+                    const entries = Object.keys(zip.files).filter(k => !zip.files[k].dir);
+                    
+                    showToast(`در حال استخراج ${entries.length} فایل (ممکن است زمان‌بر باشد)...`, 'info');
+                    
+                    // پردازش خطی برای جلوگیری از Rate Limit
+                    for (let relativePath of entries) {
+                        const content = await zip.files[relativePath].async('base64');
+                        const fullPath = dest ? `${dest}/${relativePath}` : relativePath;
+                        
+                        await smartFetch(`https://api.github.com/repos/${state.owner}/${state.repo}/contents/${fullPath}`, {
+                            method: 'PUT',
+                            body: JSON.stringify({ message: `Unzip ${relativePath}`, content: content, branch: state.branch })
+                        }).catch(e => console.warn('خطا در فایل:', relativePath, e));
+                    }
+                    showToast('استخراج با موفقیت انجام شد', 'success');
+                    closeModal(); loadCurrentDir();
+                } catch (e) { showToast(e.message, 'error'); }
             }},
-            { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+            { label: 'انصراف', onclick: closeModal }
         ]);
     }
 
-    // ====================== ایجاد ریپو جدید ======================
     function createRepoModal() {
-        openModal('ایجاد ریپازیتوری جدید', `
-            <label>نام ریپو</label>
-            <input type="text" id="newRepoName" placeholder="my-new-repo">
-            <label>توضیحات (اختیاری)</label>
-            <input type="text" id="newRepoDesc" placeholder="توضیحات کوتاه">
-            <label>خصوصی</label>
-            <select id="newRepoPrivate"><option value="true">بله</option><option value="false">خیر</option></select>
+        openModal('<i class="fas fa-plus-square"></i> ساخت مخزن جدید', `
+            <label>نام مخزن:</label>
+            <input type="text" id="newRepoName" placeholder="my-awesome-project" autofocus>
+            <label>توضیحات (اختیاری):</label>
+            <input type="text" id="newRepoDesc" placeholder="توضیح کوتاه...">
+            <label>وضعیت دسترسی:</label>
+            <select id="newRepoPrivate">
+                <option value="true">خصوصی (Private)</option>
+                <option value="false">عمومی (Public)</option>
+            </select>
         `, [
-            { label: 'ساخت', class: 'btn-primary', onclick: async () => {
+            { label: '<i class="fas fa-rocket"></i> ساخت مخزن', class: 'btn', onclick: async () => {
                 const name = document.getElementById('newRepoName').value.trim();
-                if (!name) { showToast('نام ریپو الزامی است', 'error'); return; }
                 const desc = document.getElementById('newRepoDesc').value.trim();
                 const isPrivate = document.getElementById('newRepoPrivate').value === 'true';
+                
+                if (!name) return showToast('نام مخزن الزامی است', 'error');
+                
                 try {
-                    const url = 'https://api.github.com/user/repos';
-                    const res = await fetch(url, {
+                    showToast('در حال ساخت مخزن...', 'info');
+                    const res = await smartFetch('https://api.github.com/user/repos', {
                         method: 'POST',
-                        headers: { ...getHeaders(state.token), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, description: desc, private: isPrivate })
+                        body: JSON.stringify({ name, description: desc, private: isPrivate, auto_init: true })
                     });
-                    if (!res.ok) throw new Error(await res.text());
-                    const data = await res.json();
-                    showToast(`ریپو ${data.full_name} ساخته شد`, 'info');
+                    
+                    showToast(`مخزن ${res.name} ساخته شد`, 'success');
                     closeModal();
+                    
+                    // رفرش و هدایت به مخزن جدید
                     await fetchRepos(state.token);
-                    document.getElementById('repoSelect').value = data.full_name;
-                    const [owner, repo] = data.full_name.split('/');
-                    state.owner = owner;
-                    state.repo = repo;
-                    state.currentPath = '';
-                    state.selected = new Set();
-                    localStorage.setItem('repo', data.full_name);
-                    document.getElementById('connStatus').textContent = `✅ ${data.full_name} : ${state.branch}`;
+                    document.getElementById('repoSelect').value = res.full_name;
+                    state.owner = res.owner.login; state.repo = res.name;
+                    state.currentPath = ''; state.selected.clear();
+                    localStorage.setItem('repo', res.full_name);
+                    
+                    document.getElementById('connStatus').innerHTML = `<i class="fas fa-check-circle"></i> متصل: ${res.name}`;
                     loadCurrentDir();
-                } catch (e) {
-                    showToast(e.message, 'error');
-                }
+                } catch (e) { showToast(e.message, 'error'); }
             }},
-            { label: 'انصراف', class: 'btn-secondary', onclick: closeModal }
+            { label: 'انصراف', onclick: closeModal }
         ]);
     }
 
-    // ====================== بارگذاری اولیه ======================
+    // ====================== مقداردهی اولیه ======================
     window.onload = function() {
         const savedToken = localStorage.getItem('token');
+        const savedBranch = localStorage.getItem('branch');
+        if (savedBranch) {
+            document.getElementById('branch').value = savedBranch;
+            state.branch = savedBranch;
+        }
         if (savedToken) {
             document.getElementById('token').value = savedToken;
             connect();
         }
+        
         document.getElementById('branch').addEventListener('change', function() {
-            localStorage.setItem('branch', this.value);
-            state.branch = this.value;
+            state.branch = this.value.trim() || 'main';
+            localStorage.setItem('branch', state.branch);
             if (state.owner && state.repo) loadCurrentDir();
         });
     };
