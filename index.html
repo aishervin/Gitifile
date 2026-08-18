@@ -9,9 +9,9 @@
     <style>
         :root {
             --bg-deep: #050507;
-            --glass-bg: rgba(20, 22, 26, 0.7);
+            --glass-bg: rgba(20, 22, 26, 0.75);
             --glass-border: rgba(210, 153, 34, 0.3);
-            --glass-hover: rgba(30, 35, 42, 0.85);
+            --glass-hover: rgba(30, 35, 42, 0.9);
             --accent: #d29922;
             --accent-hover: #e3a826;
             --accent-glow: rgba(210, 153, 34, 0.5);
@@ -29,7 +29,7 @@
             background: var(--bg-deep) radial-gradient(circle at top, #1a150b 0%, transparent 60%);
             color: var(--text-main);
             height: 100vh;
-            height: 100dvh; /* For mobile browsers */
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -42,22 +42,28 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* Topbar */
+        /* Topbar & Collapse Logic */
         .topbar {
             padding: 12px 20px;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
             border-bottom: 1px solid var(--glass-border);
             z-index: 10;
             flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        .topbar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
         .topbar .logo {
             font-weight: 800;
             color: var(--accent);
             font-size: 18px;
-            margin-left: auto; /* Push to right in RTL */
             text-shadow: 0 0 12px var(--accent-glow);
             letter-spacing: 1px;
             display: flex;
@@ -65,13 +71,37 @@
             gap: 8px;
         }
 
-        .conn-group { display: flex; gap: 10px; flex: 1; align-items: center; flex-wrap: wrap; }
+        .status { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            transition: 0.3s;
+        }
+
+        .conn-group { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            margin-top: 16px;
+            transition: all 0.3s ease;
+            transform-origin: top;
+        }
+        
+        .conn-group.collapsed {
+            display: none;
+        }
 
         input, select, textarea {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--glass-border);
-            border-radius: 6px;
-            padding: 10px 12px; /* Bigger touch target */
+            border-radius: 8px;
+            padding: 10px 14px;
             color: var(--text-main);
             font-size: 14px;
             outline: none;
@@ -87,8 +117,8 @@
             background: var(--accent);
             color: #000;
             border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
+            padding: 10px 18px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -102,13 +132,11 @@
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 
-        .status { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-right: auto; }
-
         /* Main Layout */
         .main { display: flex; flex: 1; overflow: hidden; }
         
         .toolbar {
-            width: 60px;
+            width: 65px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -136,12 +164,12 @@
         .content { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
         
         .breadcrumb {
-            padding: 12px 20px;
+            padding: 14px 20px;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(210,153,34,0.1);
+            font-size: 14px;
+            border-bottom: 1px solid rgba(210,153,34,0.15);
             overflow-x: auto;
             white-space: nowrap;
         }
@@ -162,105 +190,86 @@
         .file-item:hover, .file-item:active { transform: translateY(-3px); border-color: rgba(210, 153, 34, 0.6); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .file-item.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 15px var(--accent-glow); background: rgba(210,153,34,0.05); }
         
-        .file-item .icon { font-size: 40px; margin-bottom: 10px; color: var(--text-muted); }
+        .file-item .icon { font-size: 44px; margin-bottom: 12px; color: var(--text-muted); }
         .file-item .icon.folder { color: var(--accent); text-shadow: 0 0 10px rgba(210, 153, 34, 0.4); }
-        .file-item .name { font-size: 13px; word-break: break-word; line-height: 1.4; }
+        .file-item .name { font-size: 12px; word-break: break-word; line-height: 1.4; }
         
         .checkbox { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; accent-color: var(--accent); opacity: 0; transition: 0.2s; cursor: pointer; }
         .file-item:hover .checkbox, .file-item.selected .checkbox { opacity: 1; }
 
         .actions-overlay {
-            position: absolute; bottom: 10px; display: flex; gap: 6px; opacity: 0; transition: 0.2s;
+            position: absolute; bottom: 8px; display: flex; gap: 6px; opacity: 0; transition: 0.2s;
         }
         .file-item:hover .actions-overlay { opacity: 1; }
-        /* Show actions on touch devices without hover */
         @media (hover: none) { .actions-overlay, .checkbox { opacity: 1; } }
 
         .actions-overlay button {
-            background: rgba(0,0,0,0.8); border: 1px solid var(--glass-border); color: var(--text-main);
-            border-radius: 6px; padding: 6px 10px; cursor: pointer;
+            background: rgba(0,0,0,0.85); border: 1px solid var(--glass-border); color: var(--text-main);
+            border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: 0.2s;
         }
         .actions-overlay button:hover { background: var(--accent); color: #000; }
 
-        .empty-msg { color: var(--text-muted); text-align: center; padding: 60px 0; font-size: 14px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .empty-msg { color: var(--text-muted); text-align: center; padding: 80px 0; font-size: 15px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
 
         /* Modal */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 20px;
         }
         .modal-overlay.show { display: flex; }
-        .modal-box { padding: 24px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.9), 0 0 20px var(--glass-border); max-height: 90vh; overflow-y: auto;}
-        .modal-box h2 { font-size: 18px; margin-bottom: 16px; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;}
-        .modal-box label { display: block; margin: 12px 0 6px; font-size: 13px; color: var(--text-muted); }
-        .modal-box textarea { min-height: 150px; font-family: monospace; resize: vertical; }
-        .modal-box .btn-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box { padding: 24px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.9), 0 0 20px var(--glass-border); max-height: 90vh; overflow-y: auto;}
+        .modal-box h2 { font-size: 18px; margin-bottom: 20px; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;}
+        .modal-box label { display: block; margin: 12px 0 8px; font-size: 13px; color: var(--text-muted); }
+        .modal-box textarea { min-height: 180px; font-family: monospace; resize: vertical; }
+        .modal-box .btn-group { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
 
         /* Toast */
         .toast {
-            position: fixed; bottom: -80px; right: 50%; transform: translateX(50%); padding: 12px 20px; border-radius: 8px;
-            display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.6); white-space: nowrap; width: max-content; max-width: 90vw;
+            position: fixed; bottom: -80px; right: 50%; transform: translateX(50%); padding: 14px 24px; border-radius: 10px;
+            display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.8); white-space: nowrap; width: max-content; max-width: 90vw;
         }
-        .toast.show { bottom: 80px; } /* Above mobile bottom bar */
+        .toast.show { bottom: 85px; } 
         .toast.error { border: 1px solid var(--danger); background: rgba(248,81,73,0.95); color: #fff; }
         .toast.success { border: 1px solid var(--success); background: rgba(63,185,80,0.95); color: #fff; }
         .toast.info { border: 1px solid var(--info); background: rgba(88,166,255,0.95); color: #fff; }
 
-        /* ================= MOBILE RESPONSIVE ================= */
+        /* Mobile Layout tweaks */
         @media (max-width: 768px) {
-            .topbar { flex-direction: column; align-items: stretch; padding: 16px; gap: 16px; }
-            .topbar .logo { margin: 0 auto; justify-content: center; font-size: 20px; }
-            
-            .conn-group { flex-direction: column; width: 100%; gap: 10px; }
-            .conn-group input, .conn-group select, .conn-group .btn { width: 100% !important; height: 44px; }
-            
-            /* Status text behavior */
-            .status { justify-content: center; margin: 0 auto; font-size: 14px; }
-
-            /* Change Layout to put Toolbar at the Bottom like an App */
+            .conn-group { flex-direction: column; width: 100%; gap: 12px; }
+            .conn-group input, .conn-group select, .conn-group .btn { width: 100% !important; height: 48px; }
             .main { flex-direction: column-reverse; }
-            
             .toolbar {
-                width: 100%;
-                height: 65px;
-                flex-direction: row;
-                padding: 0 10px;
-                border-left: none;
-                border-top: 1px solid var(--glass-border);
-                justify-content: space-between;
-                overflow-x: auto;
-                background: rgba(10, 12, 16, 0.95);
-                backdrop-filter: blur(20px);
+                width: 100%; height: 70px; flex-direction: row; padding: 0 12px; border-left: none; border-top: 1px solid var(--glass-border);
+                justify-content: space-between; overflow-x: auto; background: rgba(10, 12, 16, 0.95); backdrop-filter: blur(20px);
                 -webkit-overflow-scrolling: touch;
             }
             .toolbar::-webkit-scrollbar { display: none; }
-            
-            .separator { width: 1px; height: 30px; margin: 0; }
-            .tool-btn { width: 50px; height: 50px; font-size: 22px; flex-shrink: 0; }
-            
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-            .file-item { padding: 12px 8px; }
-            .file-item .icon { font-size: 32px; }
-            .file-item .name { font-size: 11px; }
-            
-            .actions-overlay { bottom: 5px; flex-direction: column; gap: 4px; }
-            .actions-overlay button { padding: 4px; font-size: 12px; }
-            .checkbox { top: 5px; right: 5px; width: 22px; height: 22px; } /* Bigger for thumbs */
+            .separator { width: 1px; height: 35px; margin: 0; }
+            .tool-btn { width: 50px; height: 50px; font-size: 24px; flex-shrink: 0; }
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+            .file-item { padding: 14px 8px; }
+            .file-item .icon { font-size: 38px; }
+            .actions-overlay { bottom: 6px; flex-direction: column; gap: 6px; }
+            .actions-overlay button { padding: 6px; font-size: 14px; }
+            .checkbox { top: 6px; right: 6px; width: 24px; height: 24px; }
         }
     </style>
 </head>
 <body>
 
-<div class="topbar glass-panel">
-    <div class="logo"><i class="fas fa-network-wired"></i> GitFM</div>
-    <div class="conn-group">
-        <input type="password" id="token" placeholder="Token (ghp_...)">
-        <select id="repoSelect"><option value="">-- انتخاب مخزن --</option></select>
-        <input type="text" id="branch" value="main" placeholder="Branch">
+<div class="topbar glass-panel" id="topbar">
+    <div class="topbar-header">
+        <div class="logo"><i class="fas fa-network-wired"></i> GitFM</div>
+        <div class="status" id="connStatus"><i class="fas fa-circle-notch"></i> آفلاین</div>
+        <button class="toggle-btn" onclick="toggleConnGroup()" id="toggleBtn"><i class="fas fa-chevron-up"></i></button>
+    </div>
+    <div class="conn-group" id="connGroup">
+        <input type="password" id="token" placeholder="Token (ghp_...)" style="flex: 1; min-width: 150px;">
+        <select id="repoSelect" style="flex: 2; min-width: 180px;"><option value="">-- انتخاب مخزن --</option></select>
+        <input type="text" id="branch" value="main" placeholder="Branch" style="flex: 1; max-width: 100px; text-align: center;">
         <button class="btn" onclick="connect()"><i class="fas fa-link"></i> اتصال</button>
     </div>
-    <div class="status" id="connStatus"><i class="fas fa-circle-notch"></i> آفلاین</div>
 </div>
 
 <div class="main">
@@ -300,7 +309,6 @@
 </div>
 
 <script>
-    // همون کدهای جاوااسکریپت سالم قبلی بدون تغییر
     const PROXY_URL = 'https://superscrap.shervin003254024.workers.dev/';
     let state = { token: '', owner: '', repo: '', branch: 'main', currentPath: '', files: [], selected: new Set() };
 
@@ -311,9 +319,21 @@
         const t = document.getElementById('toast');
         document.getElementById('toastMsg').textContent = msg;
         t.className = `toast glass-panel show ${type}`;
-        document.getElementById('toastIcon').className = type === 'success' ? 'fas fa-check' : type === 'error' ? 'fas fa-times' : 'fas fa-info';
+        document.getElementById('toastIcon').className = type === 'success' ? 'fas fa-check-circle' : type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-info-circle';
         clearTimeout(t.timer);
-        t.timer = setTimeout(() => t.classList.remove('show'), 3500);
+        t.timer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    function toggleConnGroup(forceCollapse = false) {
+        const cg = document.getElementById('connGroup');
+        const icon = document.querySelector('#toggleBtn i');
+        if (forceCollapse || !cg.classList.contains('collapsed')) {
+            cg.classList.add('collapsed');
+            icon.className = 'fas fa-chevron-down';
+        } else {
+            cg.classList.remove('collapsed');
+            icon.className = 'fas fa-chevron-up';
+        }
     }
 
     function openModal(title, html, buttons) {
@@ -361,7 +381,7 @@
             const errData = await res.json().catch(() => ({}));
             throw new Error(errData.message || `API Error ${res.status}`);
         } catch (err) {
-            throw new Error(errorToThrow ? `Proxy & Direct Failed. Last Err: ${err.message}` : err.message);
+            throw new Error(errorToThrow ? `ارتباط ناموفق: ${err.message}` : err.message);
         }
     }
 
@@ -371,6 +391,7 @@
         state.token = token; localStorage.setItem('token', token);
         
         try {
+            showToast('در حال ارتباط با گیت‌هاب...', 'info');
             const repos = await ghFetch('/user/repos?per_page=100&sort=updated');
             const select = document.getElementById('repoSelect');
             select.innerHTML = '<option value="">-- انتخاب مخزن --</option>';
@@ -384,7 +405,8 @@
                 [state.owner, state.repo] = select.value.split('/');
                 state.branch = document.getElementById('branch').value.trim() || 'main';
                 localStorage.setItem('repo', select.value);
-                document.getElementById('connStatus').innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> ${state.repo}`;
+                document.getElementById('connStatus').innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> متصل: ${state.repo}`;
+                toggleConnGroup(true); // Auto collapse topbar on success
                 loadCurrentDir();
             }
         } catch (e) {
@@ -398,6 +420,7 @@
         localStorage.setItem('repo', e.target.value);
         state.currentPath = ''; state.selected.clear();
         loadCurrentDir();
+        toggleConnGroup(true); // Collapse after selection
     });
 
     function updateBreadcrumb() {
@@ -418,17 +441,17 @@
 
     async function loadCurrentDir() {
         const c = document.getElementById('fileContainer');
-        c.innerHTML = '<div class="empty-msg"><i class="fas fa-circle-notch fa-spin fa-2x"></i> در حال دریافت...</div>';
+        c.innerHTML = '<div class="empty-msg"><i class="fas fa-circle-notch fa-spin fa-3x"></i> در حال دریافت...</div>';
         updateBreadcrumb();
         state.selected.clear();
 
         try {
-            const data = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${state.currentPath}?ref=${state.branch}`);
+            const data = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${state.currentPath}?ref=${state.branch}&t=${Date.now()}`);
             if (!Array.isArray(data)) throw new Error('این مسیر فایل است');
             state.files = data;
             
             if (data.length === 0) {
-                c.innerHTML = '<div class="empty-msg"><i class="fas fa-folder-open fa-2x"></i> پوشه خالی است</div>';
+                c.innerHTML = '<div class="empty-msg"><i class="fas fa-folder-open fa-3x"></i> پوشه خالی است</div>';
                 return;
             }
 
@@ -438,7 +461,12 @@
                 const isDir = item.type === 'dir';
                 let icon = isDir ? 'fas fa-folder folder' : 'fas fa-file-alt';
                 const ext = item.name.split('.').pop().toLowerCase();
-                if (!isDir && ['png','jpg','svg'].includes(ext)) icon = 'fas fa-image';
+                if (!isDir) {
+                    if (['png','jpg','jpeg','svg','gif'].includes(ext)) icon = 'fas fa-image';
+                    else if (['mp4','mkv','avi'].includes(ext)) icon = 'fas fa-film';
+                    else if (['mp3','wav','ogg'].includes(ext)) icon = 'fas fa-music';
+                    else if (['zip','rar','tar','gz'].includes(ext)) icon = 'fas fa-file-archive';
+                }
                 
                 return `
                 <div class="file-item glass-panel" data-path="${item.path}" onclick="toggleSelect('${item.path}')">
@@ -446,16 +474,62 @@
                     <i class="${icon} icon"></i>
                     <div class="name">${item.name}</div>
                     <div class="actions-overlay">
-                        ${isDir ? `<button onclick="event.stopPropagation(); nav('${item.path}')"><i class="fas fa-sign-in-alt"></i></button>` : 
-                                  `<button onclick="event.stopPropagation(); window.open('${item.download_url}')"><i class="fas fa-download"></i></button>`}
+                        ${isDir ? `<button onclick="event.stopPropagation(); nav('${item.path}')" title="ورود"><i class="fas fa-sign-in-alt"></i> ورود</button>` : 
+                                  `
+                                   <button onclick="event.stopPropagation(); forceDownload('${item.path}', '${item.name}')" title="دریافت فایل (اجباری)"><i class="fas fa-download"></i></button>
+                                   <button onclick="event.stopPropagation(); copyDownloadLink('${item.path}')" title="کپی لینک دانلود مستقیم"><i class="fas fa-link"></i></button>
+                                   <button onclick="event.stopPropagation(); copyRawLink('${item.path}')" title="کپی لینک خام (برای وب)"><i class="fas fa-code"></i></button>
+                                  `}
                     </div>
                 </div>`;
             }).join('');
         } catch (e) {
             c.innerHTML = e.message === '404' 
-                ? '<div class="empty-msg"><i class="fas fa-box-open fa-2x"></i> مخزن خالی است</div>'
-                : `<div class="empty-msg" style="color:var(--danger)"><i class="fas fa-exclamation-triangle fa-2x"></i> ${e.message}</div>`;
+                ? '<div class="empty-msg"><i class="fas fa-box-open fa-3x"></i> مسیر خالی یا نامعتبر است</div>'
+                : `<div class="empty-msg" style="color:var(--danger)"><i class="fas fa-exclamation-triangle fa-3x"></i> ${e.message}</div>`;
         }
+    }
+
+    // Force Download Blob Logic
+    async function forceDownload(path, filename) {
+        showToast('در حال دریافت و آماده‌سازی فایل...', 'info');
+        try {
+            const rawUrl = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${path}`;
+            const proxyUrl = PROXY_URL + '?url=' + encodeURIComponent(rawUrl);
+            
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error('Network error');
+            const blob = await res.blob();
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast('دانلود آغاز شد', 'success');
+        } catch (e) {
+            showToast('خطا در دانلود فایل', 'error');
+        }
+    }
+
+    // لینک دانلود مستقیم (Force Download Link)
+    function copyDownloadLink(path) {
+        const downloadUrl = `https://github.com/${state.owner}/${state.repo}/raw/${state.branch}/${path}`;
+        navigator.clipboard.writeText(downloadUrl).then(() => {
+            showToast('لینک دانلود مستقیم کپی شد', 'success');
+        }).catch(() => showToast('خطا در کپی لینک', 'error'));
+    }
+
+    // لینک خام (Raw Link)
+    function copyRawLink(path) {
+        const rawUrl = `https://raw.githubusercontent.com/${state.owner}/${state.repo}/${state.branch}/${path}`;
+        navigator.clipboard.writeText(rawUrl).then(() => {
+            showToast('لینک خام کپی شد', 'info');
+        }).catch(() => showToast('خطا در کپی لینک', 'error'));
     }
 
     function toggleSelect(path) {
@@ -468,6 +542,7 @@
     const getSelected = () => state.files.filter(f => state.selected.has(f.path));
 
     async function uploadFiles(files) {
+        showToast(`در حال آپلود ${files.length} فایل...`, 'info');
         for (let file of files) {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -478,9 +553,9 @@
                         method: 'PUT',
                         body: JSON.stringify({ message: `Upload ${file.name}`, content: b64, branch: state.branch })
                     });
-                    showToast(`آپلود ${file.name} انجام شد`, 'success');
-                    loadCurrentDir();
-                } catch (err) { showToast(`خطا در ${file.name}`, 'error'); }
+                    showToast(`آپلود ${file.name} موفقیت‌آمیز بود`, 'success');
+                    loadCurrentDir(); // Will bust cache and show immediately
+                } catch (err) { showToast(`خطا در آپلود ${file.name}`, 'error'); }
             };
             reader.readAsDataURL(file);
         }
@@ -488,9 +563,10 @@
 
     async function deleteSelected() {
         const items = getSelected();
-        if (!items.length) return showToast('چیزی انتخاب نشده', 'error');
-        if (!confirm(`حذف ${items.length} آیتم؟`)) return;
+        if (!items.length) return showToast('ابتدا فایلی انتخاب کنید', 'error');
+        if (!confirm(`آیا از حذف ${items.length} مورد اطمینان دارید؟`)) return;
         
+        showToast('در حال حذف فایل‌ها...', 'info');
         for (let item of items) {
             try {
                 await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}`, {
@@ -499,75 +575,87 @@
                 });
             } catch (e) { console.error(e); }
         }
-        showToast('حذف انجام شد', 'success');
-        loadCurrentDir();
+        showToast('حذف با موفقیت انجام شد', 'success');
+        loadCurrentDir(); // Forces fresh load
     }
 
     function newFolderModal() {
-        openModal('<i class="fas fa-folder-plus"></i> پوشه جدید', `
-            <input type="text" id="fname" placeholder="نام پوشه..." autofocus>
-        `, [{ label: 'ساختن', class: 'btn', onclick: async () => {
+        openModal('<i class="fas fa-folder-plus"></i> ایجاد پوشه جدید', `
+            <input type="text" id="fname" placeholder="نام پوشه را وارد کنید..." autofocus>
+        `, [{ label: 'ایجاد', class: 'btn', onclick: async () => {
             const name = document.getElementById('fname').value.trim();
             if (!name) return;
+            showToast('در حال ایجاد پوشه...', 'info');
             const path = state.currentPath ? `${state.currentPath}/${name}/.gitkeep` : `${name}/.gitkeep`;
             await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${path}`, {
                 method: 'PUT', body: JSON.stringify({ message: 'Init folder', content: utf8_to_b64(''), branch: state.branch })
             });
-            closeModal(); loadCurrentDir();
-        }}, { label: 'بستن', onclick: closeModal }]);
+            showToast('پوشه ساخته شد', 'success');
+            closeModal(); 
+            loadCurrentDir();
+        }}, { label: 'انصراف', onclick: closeModal }]);
     }
 
     async function editSelected() {
         const items = getSelected();
-        if (items.length !== 1 || items[0].type === 'dir') return showToast('یک فایل انتخاب کنید', 'error');
+        if (items.length !== 1 || items[0].type === 'dir') return showToast('لطفاً فقط یک فایل متنی انتخاب کنید', 'error');
         const item = items[0];
         
         try {
-            const fileData = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}?ref=${state.branch}`);
+            showToast('در حال بارگیری محتوای فایل...', 'info');
+            const fileData = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}?ref=${state.branch}&t=${Date.now()}`);
             const content = b64_to_utf8(fileData.content.replace(/\n/g, ''));
             
-            openModal(`<i class="fas fa-pen"></i> ${item.name}`, `
+            openModal(`<i class="fas fa-pen"></i> ویرایش: ${item.name}`, `
                 <textarea id="fileContent" spellcheck="false">${content}</textarea>
-            `, [{ label: 'ذخیره', class: 'btn', onclick: async () => {
+            `, [{ label: 'ذخیره فایل', class: 'btn', onclick: async () => {
+                showToast('در حال ذخیره تغییرات...', 'info');
                 const newContent = utf8_to_b64(document.getElementById('fileContent').value);
                 await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}`, {
                     method: 'PUT',
                     body: JSON.stringify({ message: `Update ${item.name}`, content: newContent, sha: fileData.sha, branch: state.branch })
                 });
-                showToast('ذخیره شد', 'success'); closeModal(); loadCurrentDir();
+                showToast('تغییرات با موفقیت ذخیره شد', 'success'); 
+                closeModal(); 
+                loadCurrentDir();
             }}, { label: 'بستن', onclick: closeModal }]);
-        } catch (e) { showToast('خطا در باز کردن فایل', 'error'); }
+        } catch (e) { showToast('خطا در باز کردن فایل (احتمالاً فایل متنی نیست)', 'error'); }
     }
 
     async function renameSelected() {
         const items = getSelected();
-        if (items.length !== 1) return showToast('یک آیتم انتخاب کنید', 'error');
+        if (items.length !== 1) return showToast('فقط یک آیتم برای تغییر نام انتخاب کنید', 'error');
         const item = items[0];
 
         openModal('<i class="fas fa-keyboard"></i> تغییر نام', `
             <input type="text" id="rname" value="${item.name}" autofocus>
-        `, [{ label: 'تایید', class: 'btn', onclick: async () => {
+        `, [{ label: 'تایید و تغییر', class: 'btn', onclick: async () => {
             const newName = document.getElementById('rname').value.trim();
             if (!newName || newName === item.name) return;
+            showToast('در حال پردازش تغییر نام...', 'info');
             try {
                 const dir = item.path.substring(0, item.path.lastIndexOf('/') + 1);
-                const fileData = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}?ref=${state.branch}`);
+                const fileData = await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}?ref=${state.branch}&t=${Date.now()}`);
                 
                 await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${dir}${newName}`, {
-                    method: 'PUT', body: JSON.stringify({ message: `Rename`, content: fileData.content.replace(/\n/g,''), branch: state.branch })
+                    method: 'PUT', body: JSON.stringify({ message: `Rename to ${newName}`, content: fileData.content.replace(/\n/g,''), branch: state.branch })
                 });
                 await ghFetch(`/repos/${state.owner}/${state.repo}/contents/${item.path}`, {
                     method: 'DELETE', body: JSON.stringify({ message: `Clean old file`, sha: fileData.sha, branch: state.branch })
                 });
-                closeModal(); loadCurrentDir();
-            } catch (e) { showToast('خطا', 'error'); }
-        }}, { label: 'بستن', onclick: closeModal }]);
+                showToast('نام فایل تغییر یافت', 'success');
+                closeModal(); 
+                loadCurrentDir();
+            } catch (e) { showToast('خطا در فرآیند تغییر نام', 'error'); }
+        }}, { label: 'انصراف', onclick: closeModal }]);
     }
 
     window.onload = () => {
         if (localStorage.getItem('token')) {
             document.getElementById('token').value = localStorage.getItem('token');
-            connect();
+            if(localStorage.getItem('repo')) {
+                connect();
+            }
         }
     };
 </script>
